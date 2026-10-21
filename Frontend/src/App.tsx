@@ -2,12 +2,14 @@ import React, { useEffect } from 'react';
 import { useStore } from './store';
 import { TopBar } from './components/TopBar';
 import { Banner } from './components/Banner';
-import { ModuleHealth } from './components/ModuleHealth';
+import { StatusHeadline } from './components/StatusHeadline';
 import { Topology } from './components/Topology';
-import { NodePanel } from './components/NodePanel';
+import { NodeDrawer } from './components/NodeDrawer';
+import { ModuleHealth } from './components/ModuleHealth';
 import { SafetyCard } from './components/SafetyCard';
 import { RiskTimeline } from './components/RiskTimeline';
 import { AuditLog } from './components/AuditLog';
+import { PlaybackDock } from './components/PlaybackDock';
 import { EvalTab } from './components/EvalTab';
 
 export const App: React.FC = () => {
@@ -19,13 +21,14 @@ export const App: React.FC = () => {
     setTime,
     t,
     tick,
+    selectedNode,
+    setSelectedNode,
   } = useStore();
 
   // Active playback timer
   useEffect(() => {
     if (!isPlaying) return;
 
-    // 250ms interval advancing 0.25s
     const timer = setInterval(() => {
       tick(0.25);
     }, 250);
@@ -57,7 +60,7 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [togglePlay, setTime, t]);
 
-  // Set html class according to theme
+  // Sync theme class
   useEffect(() => {
     if (theme === 'light') {
       document.documentElement.classList.add('light');
@@ -69,59 +72,64 @@ export const App: React.FC = () => {
   return (
     <div
       data-paused={!isPlaying}
-      className="min-w-[1280px] min-h-screen bg-bg text-text flex flex-col font-sans transition-colors duration-200"
+      className="min-w-[1280px] min-h-screen bg-bg text-text flex flex-col font-sans transition-colors duration-300 pb-28"
     >
-      {/* 1. Header with Firefox-inspired polish, brand aura & time scrubber */}
+      {/* 1. Slim Top Strip & Main Header */}
       <TopBar />
 
-      {/* 2. Amber fallback alert banner (Scenario D) */}
+      {/* 2. Scenario D Fallback Banner (Amber alert) */}
       <Banner />
 
-      {/* 3. Main Dashboard Body Container with generous breathing space */}
-      <main className="flex-1 max-w-[1780px] w-full mx-auto px-5 lg:px-8 py-6 flex flex-col gap-6">
+      {/* 3. Main Narrative Body Container */}
+      <main className="max-w-[1440px] w-full mx-auto px-6 lg:px-8 flex flex-col">
         {view === 'overview' ? (
-          <>
-            {/* Health Strip Tier */}
-            <ModuleHealth />
+          <div className="flex flex-col space-y-16 lg:space-y-20 pt-4">
+            {/* FIRST SCREEN FOCUS: Live Status Hero Headline */}
+            <StatusHeadline />
 
-            {/* Upper Tier: 60% Topology / 40% Diagnostics & Guardrails */}
-            <div className="grid grid-cols-12 gap-6 min-h-[500px]">
-              {/* Left 60%: Cytoscape Topology */}
-              <div className="col-span-12 xl:col-span-7 h-full">
+            {/* FIRST SCREEN FOCUS: Topology Stage + Detail Drawer */}
+            <section
+              aria-label="Topology stage"
+              className="w-full flex flex-col lg:flex-row items-stretch gap-6 transition-all duration-300"
+            >
+              {/* Topology Stage (centered and wide if no selection; shifts left when drawer opens) */}
+              <div className="flex-1 min-w-0 transition-all duration-300">
                 <Topology />
               </div>
 
-              {/* Right 40%: Node Diagnostics & Safety Card */}
-              <div className="col-span-12 xl:col-span-5 flex flex-col gap-6 h-full">
-                <div className="flex-1 min-h-[320px]">
-                  <NodePanel />
-                </div>
-                <div className="shrink-0">
-                  <SafetyCard />
-                </div>
-              </div>
-            </div>
+              {/* Detail Drawer (about 400px wide, opens on node click, closes on Esc) */}
+              {selectedNode && (
+                <NodeDrawer
+                  nodeId={selectedNode}
+                  onClose={() => setSelectedNode(null)}
+                />
+              )}
+            </section>
 
-            {/* Lower Tier: 50% Risk & Latency Timeline / 50% Audit Log */}
-            <div className="grid grid-cols-12 gap-6 min-h-[340px]">
-              {/* Bottom Left: Recharts Risk & Latency Timeline */}
-              <div className="col-span-12 xl:col-span-6 h-full">
-                <RiskTimeline />
-              </div>
+            {/* SECTION 2: Module Health (4 compact pills in one row) */}
+            <section aria-label="Module health" className="w-full">
+              <ModuleHealth />
+            </section>
 
-              {/* Bottom Right: Audit Log Table */}
-              <div className="col-span-12 xl:col-span-6 h-full">
-                <AuditLog />
-              </div>
-            </div>
-          </>
+            {/* SECTION 3: Safety Guardrails (FR-3.3: 4 small tiles in one row) */}
+            <SafetyCard />
+
+            {/* SECTION 4: Risk Over Time (full-width Recharts line chart) */}
+            <RiskTimeline />
+
+            {/* SECTION 5: Audit Trail (FR-3.4: full-width 5-column table) */}
+            <AuditLog />
+          </div>
         ) : (
-          /* Second Tab: Comprehensive Model Evaluation Benchmark */
-          <div className="w-full">
+          /* Second Tab: Comprehensive 8-Fold Cross-Validation Evaluation */
+          <div className="w-full pt-8 pb-12">
             <EvalTab />
           </div>
         )}
       </main>
+
+      {/* 4. Floating Playback Dock (Centered at bottom, hidden when chrome=0) */}
+      <PlaybackDock />
     </div>
   );
 };

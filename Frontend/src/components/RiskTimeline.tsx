@@ -88,70 +88,62 @@ export const RiskTimeline: React.FC = () => {
   };
 
   return (
-    <div
-      id="risk-timeline-card"
-      className="glass-panel rounded-2xl p-5 flex flex-col h-full relative shadow-glass transition-all"
-    >
+    <section aria-label="Timeline charts" id="risk-timeline-card" className="card-stage p-6 sm:p-8 flex flex-col">
       {/* Header and Controls */}
-      <div className="flex items-center justify-between pb-3.5 border-b border-border/70 flex-wrap gap-2">
+      <div className="flex items-center justify-between pb-4 border-b border-border flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-accent/15 border border-accent/30 flex items-center justify-center text-accent">
+          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
             <TrendingUp className="w-4 h-4" />
           </div>
           <div>
-            <h2 className="text-xs sm:text-sm font-semibold tracking-tight text-text">
-              {viewMode === 'risk' ? 'Risk Score Trajectory (0–1.0)' : 'Per-Edge p95 Latency (ms log scale)'}
+            <h2 className="text-base sm:text-lg font-semibold tracking-tight text-text">
+              {viewMode === 'risk' ? 'Risk Score Over Time' : 'Edge Latency Over Time (Log Scale)'}
             </h2>
-            <p className="text-[11px] text-muted font-mono">
-              {viewMode === 'risk' ? '0.85 Act Threshold • Event Markers' : 'Prometheus Istio Telemetry Window'}
+            <p className="text-xs text-muted font-mono">
+              {viewMode === 'risk' ? 'Act (0.85) and Release (0.60) Policy Thresholds' : 'p95 latency (ms) per service edge'}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          {/* View Mode Toggle Pill */}
-          <div className="flex bg-surface-subtle border border-border rounded-xl p-1 text-xs font-mono">
+        <div className="flex items-center gap-3">
+          {/* Toggle pill */}
+          <div className="flex bg-surface-2 p-1 rounded-pill border border-border text-xs font-mono">
             <button
               onClick={() => setViewMode('risk')}
-              className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
-                viewMode === 'risk'
-                  ? 'bg-accent text-white font-bold shadow-sm'
-                  : 'text-muted hover:text-text'
+              className={`px-3 py-1 rounded-pill transition-all ${
+                viewMode === 'risk' ? 'bg-primary text-white font-semibold shadow-sm' : 'text-muted hover:text-text'
               }`}
             >
-              Risk View
+              Risk view
             </button>
             <button
               onClick={() => setViewMode('latency')}
-              className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
-                viewMode === 'latency'
-                  ? 'bg-accent text-white font-bold shadow-sm'
-                  : 'text-muted hover:text-text'
+              className={`px-3 py-1 rounded-pill transition-all ${
+                viewMode === 'latency' ? 'bg-primary text-white font-semibold shadow-sm' : 'text-muted hover:text-text'
               }`}
             >
-              Latency View
+              Latency view
             </button>
           </div>
 
-          {/* Export PNG */}
           <button
             onClick={handleExportPng}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border border-border bg-surface-subtle hover:bg-surface-elevated text-muted hover:text-text transition-all shadow-sm"
-            title="Export chart as 2x PNG"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-pill text-xs font-medium border border-border bg-surface-2 hover:bg-surface text-muted hover:text-text transition-all"
+            title="Export timeline chart as 2x PNG"
             aria-label="Export timeline chart PNG"
           >
             <Camera className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Export PNG</span>
+            <span>Export PNG</span>
           </button>
         </div>
       </div>
 
-      {/* Recharts Container */}
-      <div className="flex-1 w-full min-h-[260px] pt-3">
+      {/* Chart */}
+      <div className="w-full h-80 pt-5">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={timelineData}
-            margin={{ top: 12, right: 25, left: -10, bottom: 0 }}
+            margin={{ top: 15, right: 25, left: -10, bottom: 0 }}
             onClick={(e) => {
               if (e && e.activePayload && e.activePayload.length > 0) {
                 const clickedT = e.activePayload[0].payload.t;
@@ -159,30 +151,30 @@ export const RiskTimeline: React.FC = () => {
               }
             }}
           >
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.07)" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.06)" vertical={false} />
 
             <XAxis
               dataKey="t"
               domain={[0, 600]}
-              tick={{ fill: '#94A3B8', fontSize: 10, fontFamily: 'JetBrains Mono' }}
+              tick={{ fill: '#A99BC9', fontSize: 11, fontFamily: 'JetBrains Mono' }}
               tickFormatter={(v) => `${v}s`}
-              stroke="rgba(255, 255, 255, 0.12)"
+              stroke="rgba(255, 255, 255, 0.1)"
             />
 
             {viewMode === 'risk' ? (
               <YAxis
                 domain={[0, 1.05]}
-                ticks={[0, 0.25, 0.5, 0.75, 0.85, 1.0]}
-                tick={{ fill: '#94A3B8', fontSize: 10, fontFamily: 'JetBrains Mono' }}
-                stroke="rgba(255, 255, 255, 0.12)"
+                ticks={[0, 0.25, 0.5, 0.60, 0.75, 0.85, 1.0]}
+                tick={{ fill: '#A99BC9', fontSize: 11, fontFamily: 'JetBrains Mono' }}
+                stroke="rgba(255, 255, 255, 0.1)"
               />
             ) : (
               <YAxis
                 scale="log"
                 domain={[5, 400]}
                 ticks={[5, 10, 25, 50, 100, 200, 300]}
-                tick={{ fill: '#94A3B8', fontSize: 10, fontFamily: 'JetBrains Mono' }}
-                stroke="rgba(255, 255, 255, 0.12)"
+                tick={{ fill: '#A99BC9', fontSize: 11, fontFamily: 'JetBrains Mono' }}
+                stroke="rgba(255, 255, 255, 0.1)"
               />
             )}
 
@@ -193,51 +185,69 @@ export const RiskTimeline: React.FC = () => {
                 x2={faultWindow.end}
                 y1={0}
                 y2={viewMode === 'risk' ? 1.05 : 400}
-                fill="#F43F5E"
-                fillOpacity={0.09}
-                stroke="#F43F5E"
-                strokeOpacity={0.3}
+                fill="#FF5C7C"
+                fillOpacity={0.08}
+                stroke="#FF5C7C"
+                strokeOpacity={0.25}
                 strokeDasharray="4 4"
               />
             )}
 
-            {/* Dashed Act Threshold Line at 0.85 */}
+            {/* Threshold Lines */}
             {viewMode === 'risk' && (
-              <ReferenceLine
-                y={policy.actThreshold}
-                stroke="#F43F5E"
-                strokeDasharray="4 4"
-                strokeWidth={1.5}
-                label={{
-                  value: `Act > ${policy.actThreshold}`,
-                  fill: '#F43F5E',
-                  fontSize: 10,
-                  position: 'insideTopRight',
-                  fontFamily: 'JetBrains Mono',
-                }}
-              />
+              <>
+                {/* 0.60 Release Line */}
+                <ReferenceLine
+                  y={policy.releaseThreshold}
+                  stroke="#FFB347"
+                  strokeDasharray="3 3"
+                  strokeWidth={1.5}
+                  label={{
+                    value: 'Release < 0.60',
+                    fill: '#FFB347',
+                    fontSize: 10,
+                    position: 'insideTopLeft',
+                    fontFamily: 'JetBrains Mono',
+                  }}
+                />
+
+                {/* 0.85 Act Line */}
+                <ReferenceLine
+                  y={policy.actThreshold}
+                  stroke="#FF5C7C"
+                  strokeDasharray="4 4"
+                  strokeWidth={1.5}
+                  label={{
+                    value: 'Act > 0.85',
+                    fill: '#FF5C7C',
+                    fontSize: 10,
+                    position: 'insideTopRight',
+                    fontFamily: 'JetBrains Mono',
+                  }}
+                />
+              </>
             )}
 
-            {/* Vertical Reference Line at Current Time Scrubber */}
+            {/* Current scrubber position */}
             <ReferenceLine
               x={t}
-              stroke="#818CF8"
+              stroke="#6D4AFF"
               strokeWidth={2}
               label={{
                 value: `t=${Math.round(t)}s`,
-                fill: '#818CF8',
+                fill: '#F4F0FF',
                 fontSize: 10,
                 position: 'top',
                 fontFamily: 'JetBrains Mono',
               }}
             />
 
-            {/* Vertical Markers for Audit Events */}
+            {/* Audit event pins */}
             {auditEvents.map((evt, idx) => (
               <ReferenceLine
                 key={idx}
                 x={evt.t}
-                stroke={evt.type === 'ACTION_BLOCKED' ? '#F59E0B' : '#10B981'}
+                stroke={evt.type === 'ACTION_BLOCKED' ? '#FFB347' : '#34D6B0'}
                 strokeDasharray="2 2"
                 strokeWidth={1}
               />
@@ -245,41 +255,39 @@ export const RiskTimeline: React.FC = () => {
 
             <Tooltip
               contentStyle={{
-                backgroundColor: 'rgba(13, 19, 34, 0.95)',
-                backdropFilter: 'blur(12px)',
+                backgroundColor: 'rgba(29, 20, 56, 0.95)',
+                backdropFilter: 'blur(16px)',
                 borderColor: 'rgba(255, 255, 255, 0.12)',
-                borderRadius: '12px',
-                color: '#F8FAFC',
+                borderRadius: '16px',
+                color: '#F4F0FF',
                 fontFamily: 'JetBrains Mono',
                 fontSize: '11px',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-                padding: '10px 14px',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                padding: '12px 16px',
               }}
               formatter={(value: any, name: any) => [
-                viewMode === 'risk'
-                  ? `${Number(value).toFixed(2)} (${(Number(value) * 100).toFixed(0)}%)`
-                  : `${value} ms`,
+                viewMode === 'risk' ? Number(value).toFixed(2) : `${value} ms`,
                 name,
               ]}
-              labelFormatter={(label) => `Timestamp: ${label}s`}
+              labelFormatter={(label) => `Time: ${label}s`}
             />
 
             <Legend
               wrapperStyle={{
                 fontSize: '11px',
                 fontFamily: 'JetBrains Mono',
-                paddingTop: '8px',
+                paddingTop: '12px',
               }}
             />
 
-            {/* Curves */}
+            {/* Lines */}
             {viewMode === 'risk' ? (
               <>
                 <Line
                   type="monotone"
                   dataKey="ratings"
                   name="ratings"
-                  stroke="#F43F5E"
+                  stroke="#FF5C7C"
                   strokeWidth={2.4}
                   dot={false}
                   isAnimationActive={false}
@@ -288,7 +296,7 @@ export const RiskTimeline: React.FC = () => {
                   type="monotone"
                   dataKey="reviews"
                   name="reviews"
-                  stroke="#F59E0B"
+                  stroke="#FFB347"
                   strokeWidth={2.2}
                   dot={false}
                   isAnimationActive={false}
@@ -297,7 +305,7 @@ export const RiskTimeline: React.FC = () => {
                   type="monotone"
                   dataKey="details"
                   name="details"
-                  stroke="#14B8A6"
+                  stroke="#34D6B0"
                   strokeWidth={2}
                   dot={false}
                   isAnimationActive={false}
@@ -306,7 +314,7 @@ export const RiskTimeline: React.FC = () => {
                   type="monotone"
                   dataKey="productpage"
                   name="productpage"
-                  stroke="#6366F1"
+                  stroke="#6D4AFF"
                   strokeWidth={2}
                   dot={false}
                   isAnimationActive={false}
@@ -318,7 +326,7 @@ export const RiskTimeline: React.FC = () => {
                   type="stepAfter"
                   dataKey="lat_r_rat"
                   name="reviews -> ratings (p95)"
-                  stroke="#F43F5E"
+                  stroke="#FF5C7C"
                   strokeWidth={2.2}
                   dot={false}
                   isAnimationActive={false}
@@ -327,7 +335,7 @@ export const RiskTimeline: React.FC = () => {
                   type="stepAfter"
                   dataKey="lat_p_rev"
                   name="productpage -> reviews (p95)"
-                  stroke="#F59E0B"
+                  stroke="#FFB347"
                   strokeWidth={2.2}
                   dot={false}
                   isAnimationActive={false}
@@ -336,7 +344,7 @@ export const RiskTimeline: React.FC = () => {
                   type="stepAfter"
                   dataKey="lat_p_det"
                   name="productpage -> details (p95)"
-                  stroke="#14B8A6"
+                  stroke="#34D6B0"
                   strokeWidth={2}
                   dot={false}
                   isAnimationActive={false}
@@ -346,6 +354,6 @@ export const RiskTimeline: React.FC = () => {
           </LineChart>
         </ResponsiveContainer>
       </div>
-    </div>
+    </section>
   );
 };

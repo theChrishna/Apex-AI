@@ -1,6 +1,62 @@
 # MeshHeal AI: Autonomous Service-Mesh Remediation Prototype
 
-A frontend-only SRE operations console dashboard for **MeshHeal AI**, designed for academic evaluation, project reports, and interactive demonstrations. All telemetry in the simulation engine is generated deterministically in-browser using a seeded PRNG (with optional replay of recorded episode telemetry from Istio Envoy access logs).
+A serene, high-signal SRE operations console dashboard for **MeshHeal AI**, built with React 18, TypeScript, Tailwind CSS, Cytoscape.js, and Recharts. All telemetry in the simulation engine runs deterministically in-browser using a seeded PRNG (with optional replay of recorded episode telemetry).
+
+---
+
+## Design System & Atmosphere
+
+The console features a deep violet, spacious, and breathable visual architecture designed for maximum signal clarity with zero clutter.
+
+### Dark Theme (Default Console)
+- **Page Background**: `#0F0720` to `#150A2E` with an atmospheric soft violet radial glow behind the live status headline (`rgba(139, 92, 246, 0.40)` blurred, fixed).
+- **Surfaces**: Surface `#1D1438`, Surface-2 `#261B48`, Subtle overlays `rgba(255, 255, 255, 0.04)`.
+- **Borders**: 1px hairline `rgba(255, 255, 255, 0.08)`.
+- **Text & Accents**: Text `#F4F0FF`, Muted `#A99BC9`, Primary `#6D4AFF` (interactive pills & active states).
+- **Threshold Policy Colors**:
+  - Below $0.60$ = **OK** (`#34D6B0` Teal)
+  - $0.60$ – $0.85$ = **WARN** (`#FFB347` Amber)
+  - Above $0.85$ = **CRITICAL** (`#FF5C7C` Vermillion / Action Zone)
+  - Culprit Ring: Warm orange-to-pink gradient (`#FF9A3D` to `#FF4F81`) reserved exclusively for root-cause pulsing emphasis.
+
+### Light Theme (Print / Report Mode)
+- **Background**: `#F6F3FF`
+- **Surface**: `#FFFFFF` (Surface-2 `#F0EAFB`)
+- **Border**: `#E4DCF7`
+- **Text & Accents**: Text `#1B1038`, Muted `#5E5380`, Primary `#5B3FE0`, OK `#0E8F76`, WARN `#B86E00`, CRITICAL `#D6254F`.
+- Fully WCAG AA contrast compliant for all text and background pairings.
+
+### Typography
+- **Display Headlines**: `Sofia Sans Condensed 600` (fallback `Barlow Condensed`), $48$–$56\text{px}$, tight tracking ($-0.02\text{em}$).
+- **Section Titles**: $24$–$28\text{px}$.
+- **Card Titles**: `Inter 600` at $18\text{px}$.
+- **Body & Captions**: `Inter` at $14\text{px}$ / $12\text{px}$.
+- **Numbers & Metrics**: `JetBrains Mono` with tabular numerals (`tabular-nums`), used sparingly for high-density telemetry.
+- All fonts loaded locally via `@fontsource` packages for $100\%$ offline reproducibility.
+
+### Geometry & Spacing
+- 8px base spacing scale; section gaps $64$–$96\text{px}$; card padding $28$–$32\text{px}$.
+- Large card radius **28px**, inner tiles **16px**, pills fully rounded.
+
+---
+
+## Layout: One Calm Vertical Flow
+
+Designed at $1440\times900$, the interface delivers **ONE primary focus per screen**, eliminating competing boxes:
+
+1. **Top Slim Strip**: Non-negotiable honesty badge (`SIMULATED DATA - control plane not yet implemented`).
+2. **Clean Header**: Geometric logo mark, centered segmented view tabs (`[ Operations | Evaluation ]`), scenario selector, and theme toggle.
+3. **Live Status Hero**: Eyebrow label, scenario-driven display headline (max 6 words, `aria-live="polite"`), and one-line subtitle with key facts and timestamp.
+4. **Topology Stage & Detail Drawer**:
+   - Centered wide card with `aws-us-east` soft container and dashed chips for `gcp-asia` & `azure-eu` ("namespace only, no workloads").
+   - Edge telemetry labels hidden by default; revealed with offset pill on hover/selection to eliminate node clipping.
+   - Truncated service tabs removed in favor of a full-name keyboard-accessible service list (`productpage`, `details`, `reviews`, `ratings`).
+   - Clicking any node shifts the stage and slides in the **400px Detail Drawer**: single risk number (e.g. `0.88`) with $0.60$ and $0.85$ tick bar, 3 large metrics, sparkline, single-sentence diagnosis, and consistency circles ($k$ of 4). Closes with `Esc`.
+5. **Module Health**: 4 compact pills in one row (`Telemetry`, `GNN Predictor`, `Control Plane`, `Service Mesh`) with status dots and hover popovers containing strictly verified facts.
+6. **Safety Verification (FR-3.3)**: 4 small tiles with one-word verdicts (*Pass*, *Pass*, *Ready*, *Found*) plus verdict pill and expandable policy parameter editor.
+7. **Risk Over Time**: Full-width Recharts line chart with $0.60$ Release and $0.85$ Act threshold lines, shaded fault window, and log-scale latency toggle.
+8. **Remediation Audit Trail (FR-3.4)**: Full-width 5-column table (*Time*, *Event*, *Service*, *Detail*, *Reason*), clickable jump-to-time rows, and type filters.
+9. **Floating Playback Dock**: Centered at bottom of viewport with Play/Pause (`Space`), speed toggle ($1\times, 2\times, 4\times$), time scrubber with fault window & event pins, and time readout. Hidden when `chrome=0`.
 
 ---
 
@@ -17,95 +73,44 @@ A frontend-only SRE operations console dashboard for **MeshHeal AI**, designed f
 
 ---
 
-## Tech Stack
-
-- **Framework**: Vite + React 18 + TypeScript
-- **Styling**: Tailwind CSS with custom CSS variables for high-contrast SRE Console (Dark) and WCAG AA Print (Light)
-- **Topology**: Cytoscape.js with compound region nodes, color-blind safe risk ramps, animated dashed edge flows, and multi-cue status symbols
-- **Charts**: Recharts (Risk score trajectories, log-scale p95 edge latency, grouped bar charts with standard deviation error bars)
-- **State**: Zustand with continuous time scrubbing, playback speed control, and URL query parameter synchronization
-- **Typography**: `@fontsource/inter` (UI) and `@fontsource/jetbrains-mono` (numbers/metrics) for full offline reproducibility
-- **Export**: `html-to-image` for high-resolution 2x PNG figures with burned-in non-negotiable honesty badges
-
----
-
-## Quick Start
-
-### 1. Install Dependencies
-```bash
-npm install
-```
-
-### 2. Run Local Development Server
-```bash
-npm run dev
-```
-Open [http://localhost:5173](http://localhost:5173) in your browser.
-
-### 3. Run Test Suite
-```bash
-npm test
-```
-Runs the 3 deterministic scenario engine unit tests with Vitest:
-1. Scenario engine determinism for fixed seeds
-2. Risk score bound verification (`0 <= risk <= 1`)
-3. Audit log time-ordering verification (`t_i >= t_{i-1}`)
-
-### 4. Build Production Bundle
-```bash
-npm run build
-```
-
----
-
 ## Reproducible Report Figures
 
 Every view and scenario state can be frozen and exported with pixel precision using URL parameters:
 
 ```
-?scenario={A|B|C|D|E|F}&t={seconds}&view={overview|evaluation}&theme={dark|light}&chrome={0|1}
+http://localhost:5173/?scenario={A|B|C|D|E|F}&t={seconds}&view={overview|evaluation}&theme={dark|light}&chrome={0|1}
 ```
-Setting `chrome=0` freezes playback at time `t`, hides UI player controls, and prepares a clean 1440x900 layout ready for report figures.
 
-### Report Figure URLs
+Setting `chrome=0` freezes playback at time `t`, hides the floating playback dock, and prepares a clean $1440\times900$ stage for screenshots and 2x PNG figure exports.
 
-| # | Figure Description | Dark Console Theme URL | Light Print Theme URL |
+### Figure Reproduction URLs
+
+| # | Figure Description | Dark Theme URL | Light Theme URL |
 | :-: | :--- | :--- | :--- |
-| **1** | **Normal Steady State** (A, t=60s) | [A @ 60s (Dark)](http://localhost:5173/?scenario=A&t=60&view=overview&theme=dark&chrome=0) | [A @ 60s (Light)](http://localhost:5173/?scenario=A&t=60&view=overview&theme=light&chrome=0) |
-| **2** | **Fault Detected** (A, t=240s) | [A @ 240s (Dark)](http://localhost:5173/?scenario=A&t=240&view=overview&theme=dark&chrome=0) | [A @ 240s (Light)](http://localhost:5173/?scenario=A&t=240&view=overview&theme=light&chrome=0) |
-| **3** | **Reroute Applied** (A, t=330s) | [A @ 330s (Dark)](http://localhost:5173/?scenario=A&t=330&view=overview&theme=dark&chrome=0) | [A @ 330s (Light)](http://localhost:5173/?scenario=A&t=330&view=overview&theme=light&chrome=0) |
-| **4** | **Blocked Action (Safety Guardrail)** (B, t=300s) | [B @ 300s (Dark)](http://localhost:5173/?scenario=B&t=300&view=overview&theme=dark&chrome=0) | [B @ 300s (Light)](http://localhost:5173/?scenario=B&t=300&view=overview&theme=light&chrome=0) |
-| **5** | **GNN Down & Fallback Activated** (D, t=260s) | [D @ 260s (Dark)](http://localhost:5173/?scenario=D&t=260&view=overview&theme=dark&chrome=0) | [D @ 260s (Light)](http://localhost:5173/?scenario=D&t=260&view=overview&theme=light&chrome=0) |
-| **6** | **Flapping Suppression & Cooldown** (E, t=350s) | [E @ 350s (Dark)](http://localhost:5173/?scenario=E&t=350&view=overview&theme=dark&chrome=0) | [E @ 350s (Light)](http://localhost:5173/?scenario=E&t=350&view=overview&theme=light&chrome=0) |
+| **1** | **Normal Steady State** ($A, t=60\text{s}$) | [A @ 60s (Dark)](http://localhost:5173/?scenario=A&t=60&view=overview&theme=dark&chrome=0) | [A @ 60s (Light)](http://localhost:5173/?scenario=A&t=60&view=overview&theme=light&chrome=0) |
+| **2** | **Fault Detected** ($A, t=240\text{s}$) | [A @ 240s (Dark)](http://localhost:5173/?scenario=A&t=240&view=overview&theme=dark&chrome=0) | [A @ 240s (Light)](http://localhost:5173/?scenario=A&t=240&view=overview&theme=light&chrome=0) |
+| **3** | **Reroute Applied** ($A, t=330\text{s}$) | [A @ 330s (Dark)](http://localhost:5173/?scenario=A&t=330&view=overview&theme=dark&chrome=0) | [A @ 330s (Light)](http://localhost:5173/?scenario=A&t=330&view=overview&theme=dark&chrome=0) |
+| **4** | **Blocked Action (Safety Guardrail)** ($B, t=300\text{s}$) | [B @ 300s (Dark)](http://localhost:5173/?scenario=B&t=300&view=overview&theme=dark&chrome=0) | [B @ 300s (Light)](http://localhost:5173/?scenario=B&t=300&view=overview&theme=dark&chrome=0) |
+| **5** | **GNN Down & Fallback Activated** ($D, t=260\text{s}$) | [D @ 260s (Dark)](http://localhost:5173/?scenario=D&t=260&view=overview&theme=dark&chrome=0) | [D @ 260s (Light)](http://localhost:5173/?scenario=D&t=260&view=overview&theme=dark&chrome=0) |
+| **6** | **Flapping Suppression & Cooldown** ($E, t=350\text{s}$) | [E @ 350s (Dark)](http://localhost:5173/?scenario=E&t=350&view=overview&theme=dark&chrome=0) | [E @ 350s (Light)](http://localhost:5173/?scenario=E&t=350&view=overview&theme=dark&chrome=0) |
 | **7** | **Evaluation Benchmark (8 Folds)** | [Eval (Dark)](http://localhost:5173/?view=evaluation&theme=dark&chrome=0) | [Eval (Light)](http://localhost:5173/?view=evaluation&theme=light&chrome=0) |
 
-### How to Take Each Figure
-1. Open the desired URL above in a browser window sized at 1440x900.
-2. Click the **"Export PNG"** or **"Export Report Figure (PNG)"** button on the relevant card (Topology, Risk Timeline, Audit Log, or Evaluation Tab).
-3. The image is downloaded at **2x scale** with the persistent honesty badge burned into the top banner alongside the scenario title and timestamp caption.
+To export any component at **2x scale** with the burned-in honesty badge and scenario caption, click the **"Export PNG"** button on the corresponding card.
 
 ---
 
-## Implemented Scenarios
+## Quick Start Commands
 
-- **Scenario A**: `"ratings +200ms: reroute applied"`
-  Fault injected at $t=120\text{s}$. Latency ramps up over 90s. Ratings risk breaches $0.85$ threshold in 3 of 4 snapshots. Safety checks pass and shift reviews traffic to `reviews-v1` at $t=180\text{s}$. Fault cleared at $t=420\text{s}$; recovered at $t=495\text{s}$.
-- **Scenario B**: `"details +100ms: blocked"`
-  Details latency increases. Safety checks evaluate pod readiness, circular route, cooldown, and alternative paths. Action is safely `BLOCKED` with reason `no_healthy_alternative`.
-- **Scenario C**: `"reviews +200ms: cascade"`
-  Reviews internal bottleneck causes productpage delay to rise while reviews-to-ratings stays baseline. Culprit analysis correctly tags reviews as root-cause ($0.94$) and productpage as victim ($0.52$). Blocked due to `no_healthy_alternative`.
-- **Scenario D**: `"GNN down mid-run"`
-  GNN predictor times out at $t=200\text{s}$ ($>500\text{ms}$). Full-width amber banner triggers and GNN chip turns red. Fallback rule takes over static thresholds (FR-4.1).
-- **Scenario E**: `"flapping near threshold"`
-  Risk oscillates around $0.85$. Initial action is permitted, arming a 120s cooldown. Subsequent threshold crosses are safely suppressed as `ACTION_BLOCKED` (`cooldown`), preventing control loop thrashing.
-- **Scenario F**: `"Replay recorded episode"`
-  Loads real telemetry lines from `public/replay/snapshots.jsonl` and `fault_log.jsonl`, rendering recorded edge metrics with simulated autonomous diagnosis on top.
+```bash
+# Install dependencies
+npm install
 
----
+# Run local development server
+npm run dev
 
-## Accessibility & Design Compliance
+# Run unit tests (determinism, bounds [0,1], time-ordering)
+npm test
 
-- **No Color-Only Cues**: Nodes and health chips pair color ramps (Teal / Amber / Vermillion) with numeric values and icons (`● OK`, `▲ WARN`, `✖ CRIT`, `⚡ CULPRIT`).
-- **Tabular Figures**: All metrics and numbers use `JetBrains Mono` with `tabular-nums` alignment to prevent layout shifts.
-- **Motion Reduction**: `prefers-reduced-motion` media query disables edge animations; pausing simulation halts all micro-animations.
-- **Keyboard Navigation**: Timeline scrubber, scenario selector, and audit table rows are fully focusable and keyboard navigable (`Space` to toggle playback, `Left/Right` arrow keys to scrub time).
+# Build production bundle
+npm run build
+```

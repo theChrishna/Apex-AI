@@ -1,3 +1,4 @@
+@import "@fontsource/sofia-sans-condensed/600.css";
 @import "@fontsource/inter/400.css";
 @import "@fontsource/inter/500.css";
 @import "@fontsource/inter/600.css";
@@ -7,42 +8,46 @@
 @import "@fontsource/jetbrains-mono/700.css";
 
 :root {
-  /* Firefox-inspired Dark Console Theme: deep obsidian navy with subtle indigo/cyan aura */
-  --color-bg: #070B14;
-  --color-surface: #0D1322;
-  --color-surface-elevated: #121A2E;
-  --color-surface-subtle: #162038;
+  /* Dark console theme (default): deep violet backgrounds with soft violet radial glow */
+  --color-bg: #0F0720;
+  --color-bg-end: #150A2E;
+  --color-surface: #1D1438;
+  --color-surface-2: #261B48;
+  --color-surface-subtle: rgba(255, 255, 255, 0.04);
   --color-border: rgba(255, 255, 255, 0.08);
   --color-border-strong: rgba(255, 255, 255, 0.16);
-  --color-text: #F8FAFC;
-  --color-muted: #94A3B8;
-  --color-ok: #14B8A6;
-  --color-warn: #F59E0B;
-  --color-critical: #F43F5E;
-  --color-accent: #6366F1;
-  --color-accent-gradient: linear-gradient(135deg, #6366F1 0%, #3B82F6 50%, #06B6D4 100%);
-  --color-accent-subtle: rgba(99, 102, 241, 0.12);
-  --color-overlay-green: #10B981;
+  --color-text: #F4F0FF;
+  --color-muted: #A99BC9;
+  --color-primary: #6D4AFF;
+  --color-primary-hover: #5B38F0;
+  --color-primary-subtle: rgba(109, 74, 255, 0.15);
+  --color-ok: #34D6B0;
+  --color-warn: #FFB347;
+  --color-critical: #FF5C7C;
+  --gradient-culprit: linear-gradient(135deg, #FF9A3D 0%, #FF4F81 100%);
+  --color-overlay-green: #34D6B0;
 }
 
 :root.light,
 .light {
-  /* Firefox-inspired Light Print Theme: pristine, crisp, WCAG AA compliant */
-  --color-bg: #F8FAFC;
+  /* Light "print" theme (for reports, WCAG AA compliant) */
+  --color-bg: #F6F3FF;
+  --color-bg-end: #F6F3FF;
   --color-surface: #FFFFFF;
-  --color-surface-elevated: #FFFFFF;
-  --color-surface-subtle: #F1F5F9;
-  --color-border: #E2E8F0;
-  --color-border-strong: #CBD5E1;
-  --color-text: #0F172A;
-  --color-muted: #64748B;
-  --color-ok: #0D9488;
-  --color-warn: #D97706;
-  --color-critical: #E11D48;
-  --color-accent: #4F46E5;
-  --color-accent-gradient: linear-gradient(135deg, #4F46E5 0%, #2563EB 50%, #0891B2 100%);
-  --color-accent-subtle: rgba(79, 70, 229, 0.08);
-  --color-overlay-green: #059669;
+  --color-surface-2: #F0EAFB;
+  --color-surface-subtle: #F6F3FF;
+  --color-border: #E4DCF7;
+  --color-border-strong: #CDC0EA;
+  --color-text: #1B1038;
+  --color-muted: #5E5380;
+  --color-primary: #5B3FE0;
+  --color-primary-hover: #4A2ECC;
+  --color-primary-subtle: rgba(91, 63, 224, 0.08);
+  --color-ok: #0E8F76;
+  --color-warn: #B86E00;
+  --color-critical: #D6254F;
+  --gradient-culprit: linear-gradient(135deg, #E66A1F 0%, #D6254F 100%);
+  --color-overlay-green: #0E8F76;
 }
 
 body {
@@ -52,28 +57,47 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-image: 
-    radial-gradient(at 15% 15%, rgba(99, 102, 241, 0.06) 0px, transparent 40%),
-    radial-gradient(at 85% 25%, rgba(6, 182, 212, 0.05) 0px, transparent 45%);
-  background-attachment: fixed;
+  min-height: 100vh;
 }
 
-/* Tabular numerals for all metrics and numbers */
+/* Display headline font */
+.font-display {
+  font-family: 'Sofia Sans Condensed', 'Barlow Condensed', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Tabular numerals for numbers */
 .num-tabular,
 .font-mono {
   font-family: 'JetBrains Mono', monospace;
   font-variant-numeric: tabular-nums;
 }
 
-/* Glassmorphism utility card */
-.glass-panel {
-  background: var(--color-surface);
+/* Large rounded cards */
+.card-stage {
+  background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  border-radius: 28px;
+  box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.35);
 }
 
-.light .glass-panel {
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), inset 0 1px 0 0 rgba(255, 255, 255, 0.8);
+.light .card-stage {
+  box-shadow: 0 8px 32px -4px rgba(94, 83, 128, 0.08);
+}
+
+/* Floating dock */
+.floating-dock {
+  background-color: rgba(29, 20, 56, 0.88);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+  box-shadow: 0 16px 40px -6px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.light .floating-dock {
+  background-color: rgba(255, 255, 255, 0.92);
+  border: 1px solid #E4DCF7;
+  box-shadow: 0 16px 40px -6px rgba(94, 83, 128, 0.18), 0 0 0 1px rgba(91, 63, 224, 0.08);
 }
 
 /* Pause micro-animations when scenario is paused */
