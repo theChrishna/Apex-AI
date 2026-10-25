@@ -16,5 +16,5 @@ Run (from the project folder, venv active):
 
 Known limits (say them in the viva): only `ratings` has a reroute (reviews v1 skips it); details /
 productpage / reviews faults are logged ACTION_BLOCKED (no_healthy_alternative); the rule detector
-misses small (50 ms) faults because p95 is bucketed; replay shows decisions only (no feedback loop);
+caught both 50 ms replay episodes (ep 2 details, ep 6 ratings), probably because the bucketed p95 reads 97.5 ms at the histogram bucket edge, so do not read this as sensitivity to smaller faults (untested); a node that depends on a rerouted culprit is logged SUPPRESSED_VICTIM instead of acted on; replay shows decisions only (no feedback loop);
 GnnScorer is a stub until wired to model.py.
