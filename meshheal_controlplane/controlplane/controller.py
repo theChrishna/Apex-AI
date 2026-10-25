@@ -2,7 +2,7 @@
 from collections import deque
 from datetime import datetime, timezone
 
-from .playbook import PLAYBOOK, deps_of, reroute_weights
+from .playbook import PLAYBOOK, deps_of, depends_on, reroute_weights
 from .scorer import as_result
 from .snapshot import BadSnapshot, node_stats
 
@@ -43,12 +43,19 @@ class Controller:
             return "alternative_unhealthy"
         return None
 
-    def _block(self, node, reason, risk, now):
+    def _log_throttled(self, event, node, key, now, **kw):
         prev = self._blocked.get(node)
-        if prev and prev[0] == reason and (now - prev[1]).total_seconds() < self.cfg.blocked_relog_s:
+        if prev and prev[0] == key and (now - prev[1]).total_seconds() < self.cfg.blocked_relog_s:
             return
-        self._blocked[node] = (reason, now)
-        self._log("ACTION_BLOCKED", node=node, risk=round(risk, 3), reason=reason)
+        self._blocked[node] = (key, now)
+        self._log(event, node=node, **kw)
+
+    def _block(self, node, reason, risk, now):
+        self._log_throttled("ACTION_BLOCKED", node, reason, now, risk=round(risk, 3), reason=reason)
+
+    def _victim_of(self, node):
+        """Active (rerouted) culprit that `node` depends on, if any."""
+        return next((c for c in self.active if depends_on(node, c)), None)
 
     def _apply(self, node, plan, weights, now, event, **kw):
         self.client.set_weights(plan.virtual_service, weights)
@@ -75,7 +82,11 @@ class Controller:
         self._manage_active(stats, scores, now)
 
         node = self._persistent_top(scores)
-        if node and node not in self.active:
+        culprit = self._victim_of(node) if node and node not in self.active else None
+        if culprit:
+            self._log_throttled("SUPPRESSED_VICTIM", node, f"victim_of:{culprit}", now,
+                                culprit=culprit, risk=round(scores[node], 3))
+        elif node and node not in self.active:
             plan = PLAYBOOK.get(node)
             reason = self._safety(node, plan, scores, now)
             if reason:

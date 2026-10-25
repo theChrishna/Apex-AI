@@ -7,6 +7,7 @@ from controlplane.audit import AuditLog
 from controlplane.cluster import FakeClient
 from controlplane.config import Config
 from controlplane.controller import Controller, step_from_file
+from controlplane.playbook import depends_on
 from controlplane.scorer import ResilientScorer, RuleScorer
 from controlplane.snapshot import BadSnapshot, parse_snapshot
 
@@ -22,6 +23,23 @@ def snap_obj(ts, ratings_ms=0, details_ms=0, rate=5.0):
         e("productpage", "details", 10 + details_ms),
         e("productpage", "reviews", 25 + ratings_ms),
         e("reviews", "ratings", 10 + ratings_ms)]}
+
+
+def victim_obj(ts, rate=5.0):
+    """Bucketed-p95 pattern seen in replay ep 3: reviews' inbound lands in a higher bucket than its
+    outbound call to ratings, so reviews out-scores ratings even though it is only waiting on it."""
+    def e(s, d, lat):
+        return {"source": s, "destination": d, "request_rate": rate, "error_rate": 0.0, "latency_p95": lat}
+    return {"timestamp": ts.isoformat(), "nodes": NODES, "edges": [
+        e("productpage", "details", 10), e("productpage", "reviews", 240), e("reviews", "ratings", 97.5)]}
+
+
+def run_victim(ctrl, box, n):
+    out = []
+    for _ in range(n):
+        box["now"] += timedelta(seconds=15)
+        out += ctrl.step(parse_snapshot(victim_obj(box["now"])))
+    return out
 
 
 def make(client=None, scorer=None, **cfg_kw):
@@ -170,3 +188,52 @@ def test_step_from_file_survives_garbage(tmp_path):
     good = json.dumps(snap_obj(box["now"]))
     p.write_text(good + "\n" + '{"timestamp": "2026')
     assert step_from_file(ctrl, str(p)) is not None
+
+
+def test_depends_on_is_transitive_over_any_subset():
+    assert depends_on("reviews", "ratings")          # v2/v3 call ratings
+    assert depends_on("productpage", "ratings")      # via reviews
+    assert depends_on("productpage", "details")
+    assert not depends_on("details", "ratings")
+    assert not depends_on("ratings", "reviews")
+
+
+def test_victim_after_ratings_reroute_is_suppressed():
+    client = FakeClient()
+    ctrl, box = make(client, cooldown_s=600)
+    ev = run(ctrl, box, 3, ratings_ms=150)
+    assert len(events(ev, "REROUTE")) == 1
+    n_calls = len(client.calls)
+    ev = run_victim(ctrl, box, 8)
+    sup = events(ev, "SUPPRESSED_VICTIM")
+    assert sup and sup[0]["node"] == "reviews" and sup[0]["culprit"] == "ratings"
+    assert len(sup) == 2              # 8 cycles = 120 s -> logged once, re-logged after 60 s
+    assert not events(ev, "ACTION_BLOCKED") and not events(ev, "REROUTE")
+    assert len(client.calls) == n_calls
+
+
+def test_reviews_victim_not_suppressed_without_active_reroute():
+    ctrl, box = make(cooldown_s=600)
+    ev = run_victim(ctrl, box, 8)
+    assert not events(ev, "SUPPRESSED_VICTIM")
+    assert events(ev, "ACTION_BLOCKED")
+
+
+def test_non_dependent_node_still_blocked_while_ratings_rerouted():
+    client = FakeClient()
+    ctrl, box = make(client, cooldown_s=600)
+    run(ctrl, box, 3, ratings_ms=150)
+    n_calls = len(client.calls)
+    ev = run(ctrl, box, 6, details_ms=150)
+    blocked = events(ev, "ACTION_BLOCKED")
+    assert blocked and blocked[0]["node"] == "details" and blocked[0]["reason"] == "no_healthy_alternative"
+    assert not events(ev, "SUPPRESSED_VICTIM")
+    assert len(client.calls) == n_calls
+
+
+def test_ratings_culprit_still_rerouted_in_fresh_controller():
+    client = FakeClient()
+    ctrl, box = make(client)
+    ev = run(ctrl, box, 3, ratings_ms=150)
+    assert [e["culprit"] for e in events(ev, "REROUTE")] == ["ratings"]
+    assert not events(ev, "SUPPRESSED_VICTIM")

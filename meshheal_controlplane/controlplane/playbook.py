@@ -38,6 +38,22 @@ def deps_of(service, subset):
     return DEPENDS.get((service, subset), DEPENDS.get((service, "*"), ()))
 
 
+def depends_on(service, node):
+    """True if `service` (any version) calls `node`, directly or through other services."""
+    seen, todo = set(), [service]
+    while todo:
+        svc = todo.pop()
+        if svc in seen:
+            continue
+        seen.add(svc)
+        for (name, _), calls in DEPENDS.items():
+            if name == svc:
+                if node in calls:
+                    return True
+                todo.extend(calls)
+    return False
+
+
 def reroute_weights(plan, share_to_others=0):
     """100% to the target subset, or (100-share) to target with `share` spread over the others."""
     others = [s for s, _ in plan.normal_weights if s != plan.target_subset]
