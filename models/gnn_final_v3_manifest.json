@@ -1,0 +1,101 @@
+{
+  "created_utc": "2026-10-26T18:59:49.200628+00:00",
+  "git_commit": "2e1455efb0d59f65cf7f21435338d012e7e5376e",
+  "model": {
+    "class": "model.RiskGNN",
+    "num_node_features": 6,
+    "hidden_dim": 16
+  },
+  "train_config": {
+    "epochs": 100,
+    "lr": 0.01,
+    "pos_weight": 1.0,
+    "seeds": [
+      42,
+      7,
+      13,
+      99,
+      2024
+    ]
+  },
+  "features": {
+    "builder": "build_dataset_v2.record_to_graph(scale=True)",
+    "order": [
+      "in_rate",
+      "in_err",
+      "in_lat",
+      "out_rate",
+      "out_err",
+      "out_lat"
+    ],
+    "scaling": "log1p on rates and latencies; error rates unscaled",
+    "node_vocab": [
+      "details",
+      "productpage",
+      "ratings",
+      "reviews"
+    ]
+  },
+  "inference": "mean of sigmoid(logits) over seeds",
+  "data": {
+    "variant": "v3 (noisy normal snapshots excluded)",
+    "episodes": [
+      {
+        "id": "A",
+        "node": "ratings",
+        "delay_ms": 200
+      },
+      {
+        "id": "B",
+        "node": "details",
+        "delay_ms": 100
+      },
+      {
+        "id": "1",
+        "node": "reviews",
+        "delay_ms": 100
+      },
+      {
+        "id": "2",
+        "node": "details",
+        "delay_ms": 50
+      },
+      {
+        "id": "3",
+        "node": "ratings",
+        "delay_ms": 100
+      },
+      {
+        "id": "4",
+        "node": "reviews",
+        "delay_ms": 200
+      },
+      {
+        "id": "5",
+        "node": "details",
+        "delay_ms": 200
+      },
+      {
+        "id": "6",
+        "node": "ratings",
+        "delay_ms": 50
+      }
+    ],
+    "train_graphs": 458,
+    "positive_node_labels": 147,
+    "excluded": "lag, recovery, normal holdout, and the noisy normal snapshots in excluded_windows_v3.json",
+    "holdout_snapshots": 69,
+    "excluded_windows_file": "excluded_windows_v3.json",
+    "excluded_windows_sha256": "cf5d05c6a496440d5e94ab66bd770e9e202d3533898abdbeb3b9299c9153b832",
+    "excluded_snapshots": 215,
+    "snapshots_sha256": "776c55321d7721442e8134e7b6db0a7468111246954c85a4378d99768f79ac05",
+    "fault_log_sha256": "62e32b1cd9207f8540b732a6db9099fd04b6d16f1c80490459026773af86fb01"
+  },
+  "weights": {
+    "42": "gnn_final_v3_seed42.pt",
+    "7": "gnn_final_v3_seed7.pt",
+    "13": "gnn_final_v3_seed13.pt",
+    "99": "gnn_final_v3_seed99.pt",
+    "2024": "gnn_final_v3_seed2024.pt"
+  }
+}

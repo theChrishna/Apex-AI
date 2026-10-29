@@ -1,0 +1,6 @@
+{"episode": 1, "node": "reviews", "delay_ms": 100, "start": "2026-10-18T12:22:54.328946+00:00", "end": "2026-10-18T12:27:54.431185+00:00", "completed": true}
+{"episode": 2, "node": "details", "delay_ms": 50, "start": "2026-10-18T12:30:54.552148+00:00", "end": "2026-10-18T12:35:54.620602+00:00", "completed": true}
+{"episode": 3, "node": "ratings", "delay_ms": 100, "start": "2026-10-18T12:38:54.731728+00:00", "end": "2026-10-18T12:43:54.843632+00:00", "completed": true}
+{"episode": 4, "node": "reviews", "delay_ms": 200, "start": "2026-10-18T12:46:54.974076+00:00", "end": "2026-10-18T12:51:55.061909+00:00", "completed": true}
+{"episode": 5, "node": "details", "delay_ms": 200, "start": "2026-10-18T12:54:55.122596+00:00", "end": "2026-10-18T12:59:55.230513+00:00", "completed": true}
+{"episode": 6, "node": "ratings", "delay_ms": 50, "start": "2026-10-18T13:02:55.329552+00:00", "end": "2026-10-18T13:07:55.416836+00:00", "completed": true}

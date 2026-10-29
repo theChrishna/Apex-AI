@@ -3,7 +3,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv
 
+
 class RiskGNN(nn.Module):
+    """
+    Two-layer GCN that outputs one risk logit per node.
+
+    Uses LeakyReLU (negative_slope=0.1) instead of ReLU so that
+    gradients still flow through negative activations and the model
+    doesn't collapse to a single constant output.
+    """
     def __init__(self, num_node_features, hidden_dim=16):
         super().__init__()
         self.conv1 = GCNConv(num_node_features, hidden_dim)
@@ -12,11 +20,12 @@ class RiskGNN(nn.Module):
 
     def forward(self, x, edge_index):
         x = self.conv1(x, edge_index)
-        x = F.relu(x)
+        x = F.leaky_relu(x, negative_slope=0.1)   # Task 3: LeakyReLU
         x = self.conv2(x, edge_index)
-        x = F.relu(x)
+        x = F.leaky_relu(x, negative_slope=0.1)
         x = self.output(x)
         return x.squeeze(-1)
+
 
 if __name__ == "__main__":
     from build_graph_dataset import load_all_graphs
