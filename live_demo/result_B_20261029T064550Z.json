@@ -1,0 +1,55 @@
+{
+ "scenario": "B",
+ "scorer": "gnn (kill file touched: rule fallback acts)",
+ "audit_file": "live_demo/audit_B_20261029T064550Z.jsonl",
+ "first_scored": {
+  "ts": "2026-10-29T06:45:52.896862+00:00",
+  "source": "fallback",
+  "note": "primary error: RuntimeError('GNN disabled by kill file /Users/chrishna_code/Root/Codes/Semester 5 Mini Project/live_demo/gnn.off')"
+ },
+ "baseline_median_s": 0.029,
+ "fault_start_utc": "2026-10-29T06:46:04.894763Z",
+ "first_reroute_audit_ts": "2026-10-29T06:47:08.626043+00:00",
+ "detect_s_after_fault": 63.7,
+ "reroute_culprit": "ratings",
+ "latency_recovered_utc": "2026-10-29T06:47:08.905575Z",
+ "recover_s_after_reroute": 0.3,
+ "latency_median_s_faulted_before_reroute": 0.182,
+ "latency_median_s_after_recovery": 0.024,
+ "fault_removed_utc": "2026-10-29T06:47:43.030046Z",
+ "release_audit_ts": "2026-10-29T06:50:37.973032+00:00",
+ "release_s_after_fault_removed": 174.9,
+ "audit_events": [
+  {
+   "ts": "2026-10-29T06:47:08.626043+00:00",
+   "event": "REROUTE",
+   "node": "ratings",
+   "culprit": "ratings",
+   "reason": null,
+   "risk": 1.0,
+   "source": null,
+   "note": null
+  },
+  {
+   "ts": "2026-10-29T06:49:07.952930+00:00",
+   "event": "PROBE_START",
+   "node": "ratings",
+   "culprit": "ratings",
+   "reason": null,
+   "risk": null,
+   "source": null,
+   "note": null
+  },
+  {
+   "ts": "2026-10-29T06:50:37.973032+00:00",
+   "event": "RELEASE",
+   "node": "ratings",
+   "culprit": "ratings",
+   "reason": null,
+   "risk": 0.034,
+   "source": null,
+   "note": null
+  }
+ ],
+ "scored_via_fallback": 19
+}

@@ -1,0 +1,16 @@
+{"phase": "soak_start", "utc": "2026-10-26T05:48:25.925318Z", "duration_s": 1800}
+{"phase": "soak_end", "utc": "2026-10-26T06:18:25.929959Z"}
+{"phase": "fault_applied", "node": "ratings", "delay": "150ms", "utc": "2026-10-26T06:18:25.999549Z"}
+{"phase": "fault_restored", "node": "ratings", "delay": "150ms", "utc": "2026-10-26T06:23:26.106026Z"}
+{"phase": "rest_start", "utc": "2026-10-26T06:23:26.106535Z", "duration_s": 360}
+{"phase": "fault_applied", "node": "details", "delay": "75ms", "utc": "2026-10-26T06:29:26.183131Z"}
+{"phase": "fault_restored", "node": "details", "delay": "75ms", "utc": "2026-10-26T06:34:26.251256Z"}
+{"phase": "rest_start", "utc": "2026-10-26T06:34:26.251962Z", "duration_s": 360}
+{"phase": "fault_applied", "node": "reviews", "delay": "150ms", "utc": "2026-10-26T06:40:26.414671Z"}
+{"phase": "fault_restored", "node": "reviews", "delay": "150ms", "utc": "2026-10-26T06:45:26.551890Z"}
+{"phase": "rest_start", "utc": "2026-10-26T06:45:26.552643Z", "duration_s": 360}
+{"phase": "fault_applied", "node": "ratings", "delay": "75ms", "utc": "2026-10-26T06:51:26.676434Z"}
+{"phase": "fault_restored", "node": "ratings", "delay": "75ms", "utc": "2026-10-26T06:56:26.752421Z"}
+{"phase": "rest_start", "utc": "2026-10-26T06:56:26.752866Z", "duration_s": 360}
+{"phase": "done", "utc": "2026-10-26T07:02:26.758824Z"}
+{"phase": "cleanup_done", "utc": "2026-10-26T07:02:26.947123Z"}

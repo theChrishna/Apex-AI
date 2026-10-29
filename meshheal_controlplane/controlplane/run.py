@@ -17,12 +17,12 @@ from .scorer import ResilientScorer, RuleScorer
 from .snapshot import BadSnapshot, parse_snapshot
 
 
-def build_scorer(name, cfg):
+def build_scorer(name, cfg, gnn_manifest=None, gnn_kill_file=None):
     rule = RuleScorer(cfg.self_lat_full_ms)
     if name == "rule":
         return rule
-    from .gnn_adapter import GnnScorer   # raises NotImplementedError until wired
-    return ResilientScorer(GnnScorer([]), rule, cfg.scorer_timeout_s)
+    from .gnn_adapter import GnnScorer
+    return ResilientScorer(GnnScorer(gnn_manifest, kill_file=gnn_kill_file), rule, cfg.scorer_timeout_s)
 
 
 def replay(path, cfg, scorer):
@@ -54,6 +54,10 @@ def main():
     ap.add_argument("--snapshots", default="snapshots.jsonl")
     ap.add_argument("--namespace", default="aws-us-east")
     ap.add_argument("--scorer", choices=["rule", "gnn"], default="rule")
+    ap.add_argument("--gnn-manifest", default="../models/gnn_final_manifest.json",
+                    help="written by train_final.py (seed weights sit next to it)")
+    ap.add_argument("--gnn-kill-file", default=None,
+                    help="demo kill switch: while this file exists the GNN raises and the rule fallback scores")
     ap.add_argument("--dry-run", action="store_true", help="read real cluster state, never write")
     ap.add_argument("--replay", action="store_true", help="offline replay of the snapshot file")
     ap.add_argument("--audit", default="audit_log.jsonl")
@@ -63,7 +67,7 @@ def main():
     cfg = Config(namespace=a.namespace, audit_path=a.audit)
     if a.interval:
         cfg.interval_s = a.interval
-    scorer = build_scorer(a.scorer, cfg)
+    scorer = build_scorer(a.scorer, cfg, a.gnn_manifest, a.gnn_kill_file)
     if a.replay:
         return replay(a.snapshots, cfg, scorer)
 

@@ -1,0 +1,24 @@
+{"ts": "2026-10-29T05:36:30.046862+00:00", "event": "SCORED", "dry_run": false, "top": "reviews", "risk": 0.0, "source": "primary"}
+{"ts": "2026-10-29T05:36:45.049261+00:00", "event": "SCORED", "dry_run": false, "top": "reviews", "risk": 0.0, "source": "primary"}
+{"ts": "2026-10-29T05:37:00.051229+00:00", "event": "SCORED", "dry_run": false, "top": "reviews", "risk": 0.0, "source": "primary"}
+{"ts": "2026-10-29T05:37:15.052881+00:00", "event": "SCORED", "dry_run": false, "top": "reviews", "risk": 0.911, "source": "primary"}
+{"ts": "2026-10-29T05:37:30.059014+00:00", "event": "SCORED", "dry_run": false, "top": "ratings", "risk": 1.0, "source": "primary"}
+{"ts": "2026-10-29T05:37:45.061002+00:00", "event": "SCORED", "dry_run": false, "top": "ratings", "risk": 1.0, "source": "primary"}
+{"ts": "2026-10-29T05:38:00.063227+00:00", "event": "SCORED", "dry_run": false, "top": "ratings", "risk": 1.0, "source": "primary"}
+{"ts": "2026-10-29T05:38:00.107784+00:00", "event": "REROUTE", "dry_run": false, "node": "ratings", "virtual_service": "reviews", "weights": {"v1": 100, "v2": 0, "v3": 0}, "culprit": "ratings", "risk": 1.0, "why": "reviews-v1 does not call ratings"}
+{"ts": "2026-10-29T05:38:15.069036+00:00", "event": "SCORED", "dry_run": false, "top": "ratings", "risk": 1.0, "source": "primary"}
+{"ts": "2026-10-29T05:38:30.069954+00:00", "event": "SCORED", "dry_run": false, "top": "ratings", "risk": 1.0, "source": "primary"}
+{"ts": "2026-10-29T05:38:45.073486+00:00", "event": "SCORED", "dry_run": false, "top": "ratings", "risk": 1.0, "source": "primary"}
+{"ts": "2026-10-29T05:39:00.076196+00:00", "event": "SCORED", "dry_run": false, "top": "ratings", "risk": 1.0, "source": "primary"}
+{"ts": "2026-10-29T05:39:15.084099+00:00", "event": "SCORED", "dry_run": false, "top": "productpage", "risk": 0.0, "source": "primary"}
+{"ts": "2026-10-29T05:39:30.086430+00:00", "event": "SCORED", "dry_run": false, "top": "productpage", "risk": 0.0, "source": "primary"}
+{"ts": "2026-10-29T05:39:45.090913+00:00", "event": "SCORED", "dry_run": false, "top": "productpage", "risk": 0.0, "source": "primary"}
+{"ts": "2026-10-29T05:40:00.093836+00:00", "event": "SCORED", "dry_run": false, "top": "productpage", "risk": 0.0, "source": "primary"}
+{"ts": "2026-10-29T05:40:00.113610+00:00", "event": "PROBE_START", "dry_run": false, "node": "ratings", "virtual_service": "reviews", "weights": {"v2": 15, "v3": 15, "v1": 70}, "culprit": "ratings"}
+{"ts": "2026-10-29T05:40:15.100473+00:00", "event": "SCORED", "dry_run": false, "top": "productpage", "risk": 0.0, "source": "primary"}
+{"ts": "2026-10-29T05:40:30.103109+00:00", "event": "SCORED", "dry_run": false, "top": "reviews", "risk": 0.0, "source": "primary"}
+{"ts": "2026-10-29T05:40:45.105316+00:00", "event": "SCORED", "dry_run": false, "top": "reviews", "risk": 0.0, "source": "primary"}
+{"ts": "2026-10-29T05:41:00.106475+00:00", "event": "SCORED", "dry_run": false, "top": "reviews", "risk": 0.0, "source": "primary"}
+{"ts": "2026-10-29T05:41:15.108962+00:00", "event": "SCORED", "dry_run": false, "top": "reviews", "risk": 0.0, "source": "primary"}
+{"ts": "2026-10-29T05:41:30.107845+00:00", "event": "SCORED", "dry_run": false, "top": "reviews", "risk": 0.0, "source": "primary"}
+{"ts": "2026-10-29T05:41:30.127309+00:00", "event": "RELEASE", "dry_run": false, "node": "ratings", "virtual_service": "reviews", "weights": {"v1": 34, "v2": 33, "v3": 33}, "culprit": "ratings", "risk": 0.0}

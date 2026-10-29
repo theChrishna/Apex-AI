@@ -1,0 +1,55 @@
+{
+ "scenario": "A",
+ "scorer": "gnn",
+ "audit_file": "live_demo/audit_A_20261029T053627Z.jsonl",
+ "first_scored": {
+  "ts": "2026-10-29T05:36:30.046862+00:00",
+  "source": "primary",
+  "note": null
+ },
+ "baseline_median_s": 0.023,
+ "fault_start_utc": "2026-10-29T05:36:41.918365Z",
+ "first_reroute_audit_ts": "2026-10-29T05:38:00.107784+00:00",
+ "detect_s_after_fault": 78.2,
+ "reroute_culprit": "ratings",
+ "latency_recovered_utc": "2026-10-29T05:38:01.905119Z",
+ "recover_s_after_reroute": 1.8,
+ "latency_median_s_faulted_before_reroute": 0.172,
+ "latency_median_s_after_recovery": 0.023,
+ "fault_removed_utc": "2026-10-29T05:38:36.081399Z",
+ "release_audit_ts": "2026-10-29T05:41:30.127309+00:00",
+ "release_s_after_fault_removed": 174.0,
+ "audit_events": [
+  {
+   "ts": "2026-10-29T05:38:00.107784+00:00",
+   "event": "REROUTE",
+   "node": "ratings",
+   "culprit": "ratings",
+   "reason": null,
+   "risk": 1.0,
+   "source": null,
+   "note": null
+  },
+  {
+   "ts": "2026-10-29T05:40:00.113610+00:00",
+   "event": "PROBE_START",
+   "node": "ratings",
+   "culprit": "ratings",
+   "reason": null,
+   "risk": null,
+   "source": null,
+   "note": null
+  },
+  {
+   "ts": "2026-10-29T05:41:30.127309+00:00",
+   "event": "RELEASE",
+   "node": "ratings",
+   "culprit": "ratings",
+   "reason": null,
+   "risk": 0.0,
+   "source": null,
+   "note": null
+  }
+ ],
+ "scored_via_fallback": 0
+}

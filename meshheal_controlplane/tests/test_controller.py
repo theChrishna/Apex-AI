@@ -80,6 +80,28 @@ def test_ratings_fault_triggers_reroute_after_3_of_4():
     assert client.weights["reviews"] == {"v1": 100, "v2": 0, "v3": 0}
 
 
+def test_persistence_needs_a_hit_in_the_current_cycle():
+    ctrl, _ = make()
+    hot, cooling = {"details": 0.9, "reviews": 0.1}, {"details": 0.7, "reviews": 0.1}
+    assert [ctrl._persistent_top(hot) for _ in range(3)] == [None, None, "details"]
+    assert ctrl._persistent_top(cooling) is None      # 3 of last 4 are hits, but not this one
+
+
+def test_recovered_node_is_not_acted_on():
+    ctrl, box = make(blocked_relog_s=0)              # no throttling, so every decision is logged
+    ev = run(ctrl, box, 3, details_ms=150)
+    assert len(events(ev, "ACTION_BLOCKED")) == 1
+    ev = run(ctrl, box, 1, details_ms=60)            # details still top, risk 0.7 < 0.85
+    assert not events(ev, "ACTION_BLOCKED")
+
+
+def test_sustained_fault_triggers_on_the_same_cycle():
+    ctrl, box = make()
+    run(ctrl, box, 3)
+    per_cycle = [bool(events(run(ctrl, box, 1, details_ms=150), "ACTION_BLOCKED")) for _ in range(4)]
+    assert per_cycle == [False, False, True, False]  # 3rd fault cycle, then throttled
+
+
 def test_victim_reviews_is_not_blamed():
     ctrl, box = make()
     ev = run(ctrl, box, 8, ratings_ms=150)
@@ -133,10 +155,16 @@ def test_probe_then_release_when_fault_gone():
     assert client.weights["reviews"]["v1"] == 100
     ev = run(ctrl, box, 4, ratings_ms=150)
     assert events(ev, "PROBE_START")
-    assert client.weights["reviews"]["v1"] == 90
+    assert client.weights["reviews"]["v1"] == 100 - Config().probe_share
     ev = run(ctrl, box, 4)
     assert events(ev, "RELEASE")
     assert client.weights["reviews"] == {"v1": 34, "v2": 33, "v3": 33}
+
+
+def test_probe_share_gives_enough_traffic_for_evidence():
+    # reviews gets ~0.27 req/s in the demo, so probe_share% of it reaches ratings (via v2/v3)
+    cfg = Config()
+    assert cfg.probe_share / 100 * 0.27 >= cfg.min_evidence_rate
 
 
 def test_probe_fails_back_to_reroute_if_fault_persists():
@@ -188,6 +216,19 @@ def test_step_from_file_survives_garbage(tmp_path):
     good = json.dumps(snap_obj(box["now"]))
     p.write_text(good + "\n" + '{"timestamp": "2026')
     assert step_from_file(ctrl, str(p)) is not None
+
+
+def test_step_from_file_skips_already_processed_snapshot(tmp_path):
+    p = tmp_path / "s.jsonl"
+    ctrl, box = make()
+    p.write_text(json.dumps(snap_obj(box["now"], ratings_ms=150)) + "\n")
+    assert step_from_file(ctrl, str(p)) is not None
+    n_events, n_hist = len(ctrl.audit.events), len(ctrl.history)
+    assert step_from_file(ctrl, str(p)) is None       # same timestamp: no event, no history entry
+    assert (len(ctrl.audit.events), len(ctrl.history)) == (n_events, n_hist)
+    box["now"] += timedelta(seconds=15)
+    p.write_text(json.dumps(snap_obj(box["now"], ratings_ms=150)) + "\n")
+    assert step_from_file(ctrl, str(p)) is not None   # newer timestamp is processed
 
 
 def test_depends_on_is_transitive_over_any_subset():

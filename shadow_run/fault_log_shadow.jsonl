@@ -1,0 +1,4 @@
+{"node": "ratings", "delay": "150ms", "start_utc": "2026-10-26T06:18:25.999549Z", "end_utc": "2026-10-26T06:23:26.106026Z"}
+{"node": "details", "delay": "75ms", "start_utc": "2026-10-26T06:29:26.183131Z", "end_utc": "2026-10-26T06:34:26.251256Z"}
+{"node": "reviews", "delay": "150ms", "start_utc": "2026-10-26T06:40:26.414671Z", "end_utc": "2026-10-26T06:45:26.551890Z"}
+{"node": "ratings", "delay": "75ms", "start_utc": "2026-10-26T06:51:26.676434Z", "end_utc": "2026-10-26T06:56:26.752421Z"}

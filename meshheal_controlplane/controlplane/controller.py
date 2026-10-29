@@ -18,6 +18,7 @@ class Controller:
         self.active = {}                                  # culprit -> {"mode","since","plan"}
         self.last_action = {}                             # culprit -> ts of last write
         self._blocked = {}                                # culprit -> (reason, ts)
+        self._last_snap_ts = None                         # newest snapshot timestamp already processed
 
     # ------------------------------------------------------------------ helpers
     def _log(self, event, **kw):
@@ -27,7 +28,8 @@ class Controller:
         top = max(scores, key=scores.get)
         self.history.append(top if scores[top] > self.cfg.act_threshold else None)
         hits = sum(1 for h in self.history if h == top)
-        return top if hits >= self.cfg.persist_required else None
+        # the current cycle must be a hit too: 3 old hits + a recovered reading is not a fault
+        return top if hits >= self.cfg.persist_required and self.history[-1] == top else None
 
     def _safety(self, node, plan, scores, now):
         """Return a block reason or None (FR-3.3)."""
@@ -73,7 +75,7 @@ class Controller:
             return self.audit.events[n0:]
 
         stats = node_stats(snap)
-        res = as_result(self.scorer, stats)
+        res = as_result(self.scorer, stats, snap)
         scores = res.scores
         top = max(scores, key=scores.get)
         self._log("SCORED", top=top, risk=round(scores[top], 3), source=res.source,
@@ -127,4 +129,7 @@ def step_from_file(ctrl, path):
     except BadSnapshot as e:
         ctrl._log("SNAPSHOT_REJECTED", reason=e.reason)
         return None
+    if snap.ts == ctrl._last_snap_ts:
+        return None
+    ctrl._last_snap_ts = snap.ts
     return ctrl.step(snap)

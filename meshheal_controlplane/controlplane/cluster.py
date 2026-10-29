@@ -17,6 +17,7 @@ class FakeClient:
 
 class KubeClient:
     GROUP, VERSION, PLURAL = "networking.istio.io", "v1", "virtualservices"
+    MERGE_PATCH = "application/merge-patch+json"
 
     def __init__(self, namespace):
         from kubernetes import client, config   # lazy: not needed for tests/replay
@@ -41,8 +42,11 @@ class KubeClient:
         route = [{"destination": {"host": virtual_service, "subset": s}, "weight": w}
                  for s, w in weights.items() if w > 0]
         body = {"spec": {"http": [{"route": route}]}}
+        # JSON merge patch (RFC 7386), stated explicitly: the client otherwise picks a content type itself,
+        # and a JSON patch (list) or strategic-merge type is not valid for a custom resource body like this.
         self.custom.patch_namespaced_custom_object(
-            self.GROUP, self.VERSION, self.ns, self.PLURAL, virtual_service, body)
+            self.GROUP, self.VERSION, self.ns, self.PLURAL, virtual_service, body,
+            _content_type=self.MERGE_PATCH)
 
 
 class DryRunClient:
