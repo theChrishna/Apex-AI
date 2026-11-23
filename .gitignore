@@ -22,3 +22,18 @@ Thumbs.db
 # Project generated datasets & checkpoints (optional to track or exclude, keeping models/artifacts clean)
 *.pt
 *.pth
+
+# Keep the small trained models (needed to run without retraining)
+!models/*.pt
+!risk_gnn.pt
+
+# Dependencies, build output, duplicates, logs and backups
+node_modules/
+dist/
+Frontend_v3 copy/
+Frontend_v3/screenshots/
+shadow_run/*.log
+shadow_run/*.out
+shadow_run/pids.txt
+*.bak-*
+*.tsbuildinfo
