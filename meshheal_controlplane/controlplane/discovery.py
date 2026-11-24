@@ -46,6 +46,9 @@ def edge_queries(ns, window="1m"):
     return {
         "request_rate": f'sum(rate(istio_requests_total{{reporter="destination", source_workload_namespace="{ns}"}}[{window}])) by ({by})',
         "error_rate": f'sum(rate(istio_requests_total{{reporter="destination", source_workload_namespace="{ns}", response_code=~"5.*"}}[{window}])) by ({by})',
+        # gRPC failures come back as HTTP 200 with grpc_response_status != 0 (Online Boutique is all gRPC); the label is
+        # empty for plain HTTP, so this adds nothing on Bookinfo and does not double count 5xx.
+        "grpc_error_rate": f'sum(rate(istio_requests_total{{reporter="destination", source_workload_namespace="{ns}", grpc_response_status=~"[1-9][0-9]*"}}[{window}])) by ({by})',
         "latency_p95": f'histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{{reporter="source", source_workload_namespace="{ns}"}}[{window}])) by (le, {by}))',
     }
 
@@ -56,7 +59,12 @@ def discover_edges(query, ns, window="1m"):
     for field, promql in edge_queries(ns, window).items():
         for (src, dst), v in _series(query(promql), ("source_app", "destination_app")):
             e = edges.setdefault((src, dst), {"source": src, "destination": dst})
-            e[field] = v
+            if field == "grpc_error_rate":          # same meaning as error_rate: add to the HTTP 5xx rate
+                e["error_rate"] = e.get("error_rate", 0.0) + v
+            elif field == "error_rate":
+                e["error_rate"] = e.get("error_rate", 0.0) + v
+            else:
+                e[field] = v
     out = []
     for e in edges.values():
         e.setdefault("request_rate", 0.0)

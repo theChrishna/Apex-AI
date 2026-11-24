@@ -20,6 +20,8 @@ def fake_prom(ns="shop"):
         if "istio_request_duration" in promql:
             return vec(({"source_app": "web", "destination_app": "cart"}, 12.5),
                        ({"source_app": "cart", "destination_app": "db"}, 5), ({"source_app": "web", "destination_app": "ads"}, "NaN"))
+        if "grpc_response_status" in promql:
+            return vec(({"source_app": "web", "destination_app": "cart"}, 0.02), ({"source_app": "cart", "destination_app": "db"}, 0.5))
         if "response_code" in promql:
             return vec(({"source_app": "web", "destination_app": "cart"}, 0.01))
         if "source_version" in promql:
@@ -39,8 +41,9 @@ def test_edges_are_merged_across_the_three_metrics_with_defaults_for_missing_one
     edges = {(e["source"], e["destination"]): e for e in discover_edges(fake_prom(), "shop")}
     assert set(edges) == {("web", "cart"), ("cart", "db"), ("web", "ads")}
     assert edges[("web", "cart")] == {"source": "web", "destination": "cart", "request_rate": 4.0,
-                                      "error_rate": 0.01, "latency_p95": 12.5}
-    assert edges[("cart", "db")]["error_rate"] == 0.0                         # no 5xx series -> 0, not missing
+                                      "error_rate": pytest.approx(0.03), "latency_p95": 12.5}
+    assert edges[("web", "cart")]["error_rate"] == pytest.approx(0.01 + 0.02)  # HTTP 5xx + gRPC failures
+    assert edges[("cart", "db")]["error_rate"] == 0.5                          # gRPC-only failures are counted
     assert math.isnan(edges[("web", "ads")]["latency_p95"])                    # idle edge: NaN kept, filtered later
 
 
