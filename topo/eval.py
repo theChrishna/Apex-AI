@@ -32,7 +32,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "meshheal_controlplane"))
 
-from controlplane.scorer import RuleScorer  # noqa: E402
+from controlplane.scorer import BaselineScorer, RuleScorer  # noqa: E402
 from controlplane.snapshot import Snapshot, node_stats, parse_ts  # noqa: E402
 from model import RiskGNN  # noqa: E402
 from topo import sim  # noqa: E402
@@ -59,18 +59,30 @@ MODELS = {                       # name -> (class, number of features it sees)
     "mlp": (NodeMLP, 6),
     "gnn_degree": (RiskGNN, 8),  # + log1p in/out degree, to test whether structure features help
 }
-BASELINES = ["rule", "p95"]
+BASELINES = ["rule", "p95", "baseline", "baseline_clamp"]
+RISK_SCALED = ("rule", "baseline", "baseline_clamp")    # these output a 0..1 risk, so the 0.85 false-alarm rate applies
 
 
 # ------------------------------------------------------------------------------------------------ graphs
-def build_graphs(records):
+def build_graphs(records, baseline_path=None):
+    """Attach to each graph the deterministic baseline scores we compare the models against:
+      g.rule     = RuleScorer (hand-set 100 ms scale)
+      g.baseline = BaselineScorer (loaded from --baseline, if any; otherwise same as rule).
+    """
     graphs = []
     rule = RuleScorer(100.0)
+    baseline = BaselineScorer.from_file(baseline_path) if baseline_path else BaselineScorer()
+    clamp = BaselineScorer.from_file(baseline_path, saturation="clamp") if baseline_path else BaselineScorer(saturation="clamp")
     for r in records:
         g = record_to_graph(r, degree=True)
         snap = Snapshot(ts=parse_ts(r["timestamp"]), nodes=r["nodes"], edges=r["edges"])
-        sc = rule.score(node_stats(snap))                       # the deployed rule, rate-weighted as in the controller
-        g.rule = torch.tensor([sc.get(n, 0.0) for n in g.node_ids], dtype=torch.float)
+        st = node_stats(snap)
+        sc_rule = rule.score(st)
+        sc_base = baseline.score(st)
+        sc_clamp = clamp.score(st)
+        g.rule = torch.tensor([sc_rule.get(n, 0.0) for n in g.node_ids], dtype=torch.float)
+        g.baseline = torch.tensor([sc_base.get(n, 0.0) for n in g.node_ids], dtype=torch.float)
+        g.baseline_clamp = torch.tensor([sc_clamp.get(n, 0.0) for n in g.node_ids], dtype=torch.float)
         graphs.append(g)
     return graphs
 
@@ -85,7 +97,7 @@ def view(graphs, nf):
     return out
 
 
-def real_boutique_graphs(snapshots, fault_log, normal_only=None):
+def real_boutique_graphs(snapshots, fault_log, normal_only=None, baseline_path=None):
     """Real Online Boutique: labelled fault episodes plus (optionally) a separate fault-free collection."""
     from topo import real
     recs = real.label_records(snapshots, fault_log, "boutique-real", family="real", keep=("steady", "normal"))
@@ -99,7 +111,7 @@ def real_boutique_graphs(snapshots, fault_log, normal_only=None):
         have = {n["id"] for n in r["nodes"]}
         r["nodes"] = list(r["nodes"]) + [{"id": n, "region": "boutique"} for n in universe if n not in have]
         r["labels"] = {n: int(r["phase"] == "steady" and n == r["fault_node"]) for n in universe}
-    return build_graphs(recs)
+    return build_graphs(recs, baseline_path)
 
 
 def real_bookinfo_graphs():
@@ -148,6 +160,10 @@ def predict(spec, model, graphs):
 def baseline_scores(name, graphs):
     if name == "rule":
         return [g.rule.numpy() for g in graphs]
+    if name == "baseline":
+        return [g.baseline.numpy() for g in graphs]
+    if name == "baseline_clamp":
+        return [g.baseline_clamp.numpy() for g in graphs]
     return [g.x[:, IN_LAT_IDX].numpy() for g in graphs]       # p95: log1p(incoming latency)
 
 
@@ -181,14 +197,14 @@ def size_fold(graphs, small, large):
     return [("size", f"train <= {small} nodes, test >= {large} nodes", tr, te)] if tr and te else []
 
 
-def run(folds, seeds, epochs, log=print):
+def run(folds, seeds, epochs, log=print, train_models=True):
     rows = []
     for proto, name, train_g, test_g in folds:
         t0 = time.time()
         for b in BASELINES:
-            m = evaluate(test_g, baseline_scores(b, test_g), risk_scale=(b == "rule"))
+            m = evaluate(test_g, baseline_scores(b, test_g), risk_scale=(b in RISK_SCALED))
             rows.append(dict(protocol=proto, fold=name, model=b, seed="-", n_train=len(train_g), n_test=len(test_g), **m))
-        for spec in MODELS:
+        for spec in (MODELS if train_models else ()):
             for seed in seeds:
                 model = train(spec, train_g, seed, epochs)
                 m = evaluate(test_g, predict(spec, model, test_g))
@@ -262,7 +278,7 @@ def write_outputs(rows, summary, ok, lines, meta, out_prefix):
           "`boutique*` is real Online Boutique data (load-generated traffic with faults WE injected) that the simulator was NOT calibrated on.", ""]
     for proto, s in summary.items():
         md += [f"## {proto}", f"Folds: {'; '.join(s['_folds'])}", "", "| model | AP | RC@1 | FPR@0.85 |", "|---|---|---|---|"]
-        for model in ("gnn", "gnn_degree", "mlp", "rule", "p95"):
+        for model in ("gnn", "gnn_degree", "mlp", "baseline", "baseline_clamp", "rule", "p95"):
             if model in s:
                 md.append(f"| {model} | {fmt(s[model]['ap'])} | {fmt(s[model]['rc1'])} | {fmt(s[model]['fpr'])} |")
         md.append("")
@@ -288,6 +304,8 @@ def main(argv=None):
     ap.add_argument("--boutique-fault-log", help="fault log of that run")
     ap.add_argument("--boutique-normal", help="extra fault-free Boutique snapshots (for the false-alarm rate)")
     ap.add_argument("--only-boutique", action="store_true", help="run only the real-Boutique protocols (no family/size/Bookinfo folds)")
+    ap.add_argument("--baseline", default=None, help="learned BaselineScorer YAML (controlplane.learn_baseline) for the real-Boutique folds")
+    ap.add_argument("--baselines-only", action="store_true", help="score only the deterministic baselines (rule, p95, baseline); no model training")
     a = ap.parse_args(argv)
 
     t0 = time.time()
@@ -301,7 +319,7 @@ def main(argv=None):
         bookinfo = real_bookinfo_graphs()
         folds.append(("real", "synthetic -> real Bookinfo", graphs, bookinfo))
     if a.boutique_snapshots:
-        boutique = real_boutique_graphs(a.boutique_snapshots, a.boutique_fault_log, a.boutique_normal)
+        boutique = real_boutique_graphs(a.boutique_snapshots, a.boutique_fault_log, a.boutique_normal, a.baseline)
         n_st = sum(1 for g in boutique if g.phase == "steady")
         print(f"real Boutique: {len(boutique)} snapshots ({n_st} steady, {len(boutique) - n_st} normal), "
               f"{len({g.fault_node for g in boutique if g.phase == 'steady'})} faulted services")
@@ -310,10 +328,10 @@ def main(argv=None):
         folds.append(("boutique_plus_bookinfo", "synthetic + real Bookinfo -> real Boutique", graphs + bookinfo, boutique))
     if not folds:
         ap.error("nothing to run")
-    rows = run(folds, a.seeds, a.epochs)
+    rows = run(folds, a.seeds, a.epochs, train_models=not a.baselines_only)
     summary = summarise(rows)
     ok, lines = adoption(summary)
-    meta = {"corpus_seed": a.corpus_seed, "per_family": a.per_family, "epochs": a.epochs, "seeds": a.seeds,
+    meta = {"baseline": a.baseline, "baselines_only": a.baselines_only, "corpus_seed": a.corpus_seed, "per_family": a.per_family, "epochs": a.epochs, "seeds": a.seeds,
             "snapshots": len(graphs), "size_small": a.size_small, "size_test_min": a.size_test_min,
             "torch": torch.__version__, "elapsed_s": round(time.time() - t0)}
     write_outputs(rows, summary, ok, lines, meta, os.path.join(ROOT, "topo", "results", a.tag))

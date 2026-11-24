@@ -1,0 +1,77 @@
+# Learned by controlplane.learn_baseline on 2026-11-24T19:59:27.090147Z
+# Source: topo/boutique_normal_learn.jsonl (fault log: none)  records=70  services=10
+# Median and q0.99 (ms) of a service's rate-weighted incoming / outgoing latency during NORMAL traffic.
+# The controller loads this with --baseline; a service not listed falls back to the hand-set scale.
+method: envelope-q0.99
+floor_ms: 10.0
+min_rate: 0.05
+services:
+  adservice:
+    in_lat:
+      median: 4.791485507246376
+      high: 7.068750000000001
+    in_rate_median: 0.4666977798519902
+    samples: 70
+  cartservice:
+    in_lat:
+      median: 8.307946399478656
+      high: 9.499540322580643
+    in_rate_median: 0.800053336889126
+    samples: 70
+  checkoutservice:
+    in_lat:
+      median: 48.75
+      high: 97.5
+    out_lat:
+      median: 4.763637465634198
+      high: 6.26530180516434
+    in_rate_median: 0.044446419840881816
+    samples: 55
+  currencyservice:
+    in_lat:
+      median: 4.8293180383379255
+      high: 5.7070106379310275
+    in_rate_median: 2.444634336039625
+    samples: 70
+  emailservice:
+    in_lat:
+      median: 4.8
+      high: 9.75
+    in_rate_median: 0.044446419840881816
+    samples: 54
+  frontend:
+    in_lat:
+      median: 95.62777777777777
+      high: 153.87499999999986
+    out_lat:
+      median: 6.393545048533144
+      high: 7.647634154083937
+    in_rate_median: 0.8222953151391235
+    samples: 70
+  paymentservice:
+    in_lat:
+      median: 4.8
+      high: 23.095
+    in_rate_median: 0.044447407604951444
+    samples: 55
+  productcatalogservice:
+    in_lat:
+      median: 4.759960484840793
+      high: 4.9229022651113095
+    in_rate_median: 4.567174130458939
+    samples: 70
+  recommendationservice:
+    in_lat:
+      median: 19.96875
+      high: 22.969749999999998
+    out_lat:
+      median: 4.786666666666667
+      high: 6.176250000000001
+    in_rate_median: 0.6000466709634009
+    samples: 70
+  shippingservice:
+    in_lat:
+      median: 4.7333333333333325
+      high: 4.8
+    in_rate_median: 0.24445530912485
+    samples: 70

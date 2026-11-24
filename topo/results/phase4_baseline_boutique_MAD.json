@@ -1,0 +1,90 @@
+{
+ "meta": {
+  "baseline": "topo/boutique_baseline.yaml",
+  "baselines_only": true,
+  "corpus_seed": 0,
+  "per_family": 8,
+  "epochs": 40,
+  "seeds": [
+   42,
+   7,
+   13,
+   99,
+   2024
+  ],
+  "snapshots": 5760,
+  "size_small": 9,
+  "size_test_min": 16,
+  "torch": "2.14.1+cpu",
+  "elapsed_s": 13
+ },
+ "adopt_gnn": null,
+ "rows": [
+  {
+   "protocol": "boutique",
+   "fold": "synthetic -> real Boutique (independent real test)",
+   "model": "rule",
+   "seed": "-",
+   "n_train": 5760,
+   "n_test": 234,
+   "ap": 0.3034221075943325,
+   "rc1": 0.4184652278177458,
+   "fpr": 0.9157894736842105
+  },
+  {
+   "protocol": "boutique",
+   "fold": "synthetic -> real Boutique (independent real test)",
+   "model": "p95",
+   "seed": "-",
+   "n_train": 5760,
+   "n_test": 234,
+   "ap": 0.29303663907412036,
+   "rc1": 0.2949640287769784,
+   "fpr": NaN
+  },
+  {
+   "protocol": "boutique",
+   "fold": "synthetic -> real Boutique (independent real test)",
+   "model": "baseline",
+   "seed": "-",
+   "n_train": 5760,
+   "n_test": 234,
+   "ap": 0.3513904752913546,
+   "rc1": 0.4904621757139744,
+   "fpr": 0.3157894736842105
+  },
+  {
+   "protocol": "boutique_plus_bookinfo",
+   "fold": "synthetic + real Bookinfo -> real Boutique",
+   "model": "rule",
+   "seed": "-",
+   "n_train": 6504,
+   "n_test": 234,
+   "ap": 0.3034221075943325,
+   "rc1": 0.4184652278177458,
+   "fpr": 0.9157894736842105
+  },
+  {
+   "protocol": "boutique_plus_bookinfo",
+   "fold": "synthetic + real Bookinfo -> real Boutique",
+   "model": "p95",
+   "seed": "-",
+   "n_train": 6504,
+   "n_test": 234,
+   "ap": 0.29303663907412036,
+   "rc1": 0.2949640287769784,
+   "fpr": NaN
+  },
+  {
+   "protocol": "boutique_plus_bookinfo",
+   "fold": "synthetic + real Bookinfo -> real Boutique",
+   "model": "baseline",
+   "seed": "-",
+   "n_train": 6504,
+   "n_test": 234,
+   "ap": 0.3513904752913546,
+   "rc1": 0.4904621757139744,
+   "fpr": 0.3157894736842105
+  }
+ ]
+}

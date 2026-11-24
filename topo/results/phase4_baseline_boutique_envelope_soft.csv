@@ -1,0 +1,9 @@
+protocol,fold,model,seed,n_train,n_test,ap,rc1,fpr
+boutique,synthetic -> real Boutique (independent real test),rule,-,5760,234,0.3034221075943325,0.4184652278177458,0.9157894736842105
+boutique,synthetic -> real Boutique (independent real test),p95,-,5760,234,0.29303663907412036,0.2949640287769784,nan
+boutique,synthetic -> real Boutique (independent real test),baseline,-,5760,234,0.569068909264521,0.7141922825376064,0.10526315789473684
+boutique,synthetic -> real Boutique (independent real test),baseline_clamp,-,5760,234,0.4459420465100131,0.5631131458469588,0.10526315789473684
+boutique_plus_bookinfo,synthetic + real Bookinfo -> real Boutique,rule,-,6504,234,0.3034221075943325,0.4184652278177458,0.9157894736842105
+boutique_plus_bookinfo,synthetic + real Bookinfo -> real Boutique,p95,-,6504,234,0.29303663907412036,0.2949640287769784,nan
+boutique_plus_bookinfo,synthetic + real Bookinfo -> real Boutique,baseline,-,6504,234,0.569068909264521,0.7141922825376064,0.10526315789473684
+boutique_plus_bookinfo,synthetic + real Bookinfo -> real Boutique,baseline_clamp,-,6504,234,0.4459420465100131,0.5631131458469588,0.10526315789473684

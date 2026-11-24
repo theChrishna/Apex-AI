@@ -27,3 +27,6 @@ The real-Boutique evaluation (`topo/results/phase3_boutique_run1.md`) therefore 
 - Online Boutique has no versions, so only detection and root-cause finding can be evaluated on it, not a reroute.
 - The simulator was calibrated on Bookinfo, so results on simulated data and on Bookinfo are optimistic. Online Boutique was not used for calibration, which is why it is the independent real test.
 - Few real topologies: Bookinfo (4 services) and Online Boutique (11 active services).
+
+## Phase 4 split of the fault-free Boutique file
+`topo/boutique_normal_learn.jsonl` (first 70 snapshots, 09:32-09:49 UTC) is used ONLY to learn the baseline (`topo/boutique_baseline.yaml`); `topo/boutique_normal_test.jsonl` (last 70, 09:50-10:07 UTC) is used ONLY to test false alarms. Both are copies of lines of `topo/boutique_snapshots_normal.jsonl`; nothing in that file was changed.
