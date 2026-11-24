@@ -66,3 +66,35 @@ def test_virtualservice_is_deleted_even_when_the_episode_is_interrupted(monkeypa
     with pytest.raises(KeyboardInterrupt):
         rb.run_episode("boutique", "cartservice", 100, 300)
     assert calls[0][0] == "apply" and calls[-1][:3] == ("delete", "virtualservice", "cartservice-fault-inj")
+
+
+def test_normal_only_records_are_all_negative_and_skip_the_warmup(tmp_path):
+    f = tmp_path / "n.jsonl"
+    f.write_text("\n".join(json.dumps({"timestamp": (T0 + timedelta(seconds=15 * i)).isoformat(),
+                                       "nodes": [{"id": "a"}, {"id": "b"}], "edges": []}) for i in range(5)), encoding="utf-8")
+    out = real.normal_records(str(f), "shop")
+    assert len(out) == 3 and all(r["phase"] == "normal" and sum(r["labels"].values()) == 0 for r in out)
+    assert out[0]["topology"] == "shop" and out[0]["fault_node"] is None
+
+
+def test_eval_does_not_claim_a_verdict_without_a_held_out_synthetic_protocol():
+    from topo import eval as ev
+    ok, lines = ev.adoption({"boutique": {"gnn": {}, "mlp": {}}})
+    assert ok is None and "not evaluated" in lines[0]
+
+
+def test_boutique_graphs_keep_a_faulted_service_that_had_no_traffic_in_that_window(tmp_path):
+    from topo import eval as ev
+    e = lambda s, d: {"source": s, "destination": d, "request_rate": 1.0, "error_rate": 0.0, "latency_p95": 5.0}  # noqa: E731
+    snaps, log = tmp_path / "s.jsonl", tmp_path / "f.jsonl"
+    log.write_text(json.dumps({"episode": 1, "node": "pay", "delay_ms": 100, "start": T0.isoformat(),
+                               "end": (T0 + timedelta(minutes=5)).isoformat(), "completed": True}) + "\n", encoding="utf-8")
+    full = {"nodes": [{"id": "web"}, {"id": "pay"}], "edges": [e("web", "pay")]}
+    idle = {"nodes": [{"id": "web"}, {"id": "cart"}], "edges": [e("web", "cart")]}         # pay has no edge, so it is not listed
+    rows = [{"timestamp": (T0 + timedelta(seconds=s)).isoformat(), **(full if s == 100 else idle)} for s in (100, 200, -500)]
+    snaps.write_text("\n".join(json.dumps(r) for r in rows), encoding="utf-8")
+    graphs = ev.real_boutique_graphs(str(snaps), str(log))
+    assert {tuple(g.node_ids) for g in graphs} == {("cart", "pay", "web")}                 # same full universe in every graph
+    steady = [g for g in graphs if g.phase == "steady"]
+    assert len(steady) == 2 and all(g.node_ids.index(g.fault_node) >= 0 and g.y.sum() == 1 for g in steady)
+    assert ev.evaluate(steady, [g.rule.numpy() for g in steady])["rc1"] >= 0.0             # no crash looking up the faulted node

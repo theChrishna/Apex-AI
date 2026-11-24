@@ -62,3 +62,15 @@ def label_records(snapshots_path, fault_log_path, topology, family="real", keep=
         out.append({**raw, "phase": phase, "episode_id": ep_id, "fault_node": node, "topology": topology,
                     "family": family, "labels": {n: int(phase == "steady" and n == node) for n in ids}})
     return out
+
+
+def normal_records(snapshots_path, topology, family="real", skip_first=2):
+    """Records from a fault-free collection: every snapshot is phase "normal" with all labels 0.
+    The first `skip_first` snapshots are dropped (the Prometheus rate window is still warming up)."""
+    out = []
+    for raw in load_jsonl(snapshots_path)[skip_first:]:
+        ids = [n["id"] for n in raw["nodes"]]
+        out.append({**raw, "phase": "normal", "episode_id": None, "fault_node": None, "topology": topology,
+                    "family": family, "labels": {n: 0 for n in ids}})
+    return out
+
