@@ -8,8 +8,8 @@ or log ACTION_BLOCKED -> probe (70/15/15, `probe_share`=30: ~0.27 req/s x 30% = 
 Every decision is appended to audit_log.jsonl.
 
 Run (from the project folder, venv active):
-  pip install kubernetes pytest
-  python -m pytest -q                                             # 24 tests, no cluster needed (6 GNN tests skip without torch/weights)
+  pip install -r ../requirements-dev.txt   # or run ../scripts/setup.ps1 (Windows) / ../scripts/setup.sh
+  python -m pytest -q                                             # 35 tests, all pass on a clean install (torch + kubernetes installed), no cluster needed
   python -m controlplane.run --snapshots snapshots.jsonl --replay # decisions on your stored data
   python -m controlplane.run --snapshots snapshots.jsonl --dry-run  # live shadow mode: never writes
   python -m controlplane.run --snapshots snapshots.jsonl            # live, acting

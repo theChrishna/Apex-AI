@@ -1,5 +1,7 @@
 # Closed-loop live demo
 
+> Commands below use macOS paths (`.venv/bin/python`, `caffeinate`). On Windows use `.venv\Scripts\python` and skip `caffeinate`; keep the PC plugged in and awake instead.
+
 `run_live.py` starts the real, ACTING controller (no `--dry-run`, `--scorer gnn`, `--gnn-kill-file`),
 injects the ratings 150 ms fault and records what happens. It was run once per scenario on 2026-10-29 (results below).
 

@@ -48,7 +48,7 @@ class ResilientScorer:
         except FutTimeout:
             return ScoreResult(_score(self.fallback, stats, snap), "fallback", f"primary timeout >{self.timeout_s}s")
         except Exception as e:  # primary crashed / bad output
-            return ScoreResult(_score(self.fallback, stats, snap), "fallback", f"primary error: {e!r}")
+            return ScoreResult(_score(self.fallback, stats, snap), "fallback", f"primary error: {type(e).__name__}({e})")
 
 
 def as_result(scorer, stats, snap=None):

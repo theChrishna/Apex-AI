@@ -1,0 +1,11 @@
+# MeshHeal AI runtime dependencies. Versions below are the ones tested (Python 3.10.11, Windows 11, 2026-11-24).
+# torch: install the CPU build first, see scripts/setup.ps1 / scripts/setup.sh:
+#   pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cpu
+torch==2.14.1
+torch_geometric==2.8.1
+numpy==2.2.6
+scikit-learn==1.7.2
+matplotlib==3.10.9
+requests==2.34.2
+PyYAML==6.0.4
+kubernetes==37.0.3

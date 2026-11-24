@@ -14,7 +14,7 @@
 set -u
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT" || exit 1
-PY="$ROOT/.venv/bin/python"
+if [ -x "$ROOT/.venv/Scripts/python.exe" ]; then PY="$ROOT/.venv/Scripts/python.exe"; else PY="$ROOT/.venv/bin/python"; fi
 RUN="$ROOT/shadow_run"
 PIDS="$RUN/pids.txt"
 CAFFEINATE=0

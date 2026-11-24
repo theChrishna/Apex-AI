@@ -102,7 +102,10 @@ def preflight():
     age = snapshot_age()
     if age is None or age > 45:
         problems.append(f"newest snapshot in shadow_run/snapshots.jsonl is {age} s old (telemetry running? controller rejects over 45 s)")
-    b = subprocess.run(["pmset", "-g", "batt"], capture_output=True, text=True).stdout
+    try:   # macOS only; pmset does not exist on Windows/Linux, so skip the check there
+        b = subprocess.run(["pmset", "-g", "batt"], capture_output=True, text=True).stdout
+    except (FileNotFoundError, OSError):
+        b = ""
     if "discharging" in b:
         problems.append("laptop is on battery: plug in (a sleep mid-run leaves a fault applied until cleanup)")
     return problems

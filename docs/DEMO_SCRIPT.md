@@ -1,5 +1,7 @@
 # Demo script: 8 minutes, 31 October
 
+> Commands below use macOS paths (`.venv/bin/python`, `caffeinate`). On Windows use `.venv\Scripts\python` and skip `caffeinate`; keep the PC plugged in and awake instead.
+
 Commands run from the project root unless noted. Verified on the real cluster: `live_demo/test_patch.py --yes` passed on 2026-10-28; `demo_up.sh` was run on 2026-10-28 and 2026-10-29; `live_demo/run_live.py` ran scenario A (GNN scores) and scenario B (kill file, rule fallback scores) on 2026-10-29, one run each (`live_demo/result_A_20261029T053627Z.json`, `live_demo/result_B_20261029T064550Z.json`). The talk below has not been rehearsed end to end as a whole, and the dashboard in LIVE mode has not been watched during a running controller. Keep the REPLAY fallback ready.
 
 Observed timings (one run each, not averages): the reroute came 78.2 s (A) and 63.7 s (B) after the fault was applied; latency was back to baseline within about 2 s of the reroute (median 0.172 s faulted to 0.023 s in A, 0.182 s to 0.024 s in B); PROBE_START about 120 s after the reroute; RELEASE about 210 s after the reroute and 174 s (A) and 174.9 s (B) after the fault was removed. Say "about 60 to 80 seconds, set by the persistence rule" (3 of the last 4 cycles of 15 s, plus the 1-minute Prometheus rate window); the shadow run gave 60.5 to 76.4 s. Do not say one scorer is faster: A acted on the 4th high-risk cycle and B on the 3rd, and the 14 s gap is unexplained (probably one extra cycle).
