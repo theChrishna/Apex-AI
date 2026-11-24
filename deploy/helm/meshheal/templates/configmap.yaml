@@ -13,3 +13,7 @@ data:
     {{- toYaml $cfg | nindent 4 }}
   playbook.yaml: |
     {{- .Values.playbook | nindent 4 }}
+  {{- if .Values.baseline }}
+  baseline.yaml: |
+    {{- .Values.baseline | nindent 4 }}
+  {{- end }}

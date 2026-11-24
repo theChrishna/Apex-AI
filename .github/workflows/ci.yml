@@ -36,7 +36,7 @@ jobs:
         run: |
           docker run --rm meshheal-controlplane:ci controlplane.run --help | grep -e '--act'
           test "$(docker run --rm --entrypoint id meshheal-controlplane:ci -u)" = "10001"
-          docker run --rm --entrypoint python meshheal-controlplane:ci -c "import sys, controlplane.run, controlplane.collect; assert 'torch' not in sys.modules"
+          docker run --rm --entrypoint python meshheal-controlplane:ci -c "import sys, controlplane.run, controlplane.collect, controlplane.learn_baseline; assert 'torch' not in sys.modules"
       - uses: azure/setup-helm@v4
         with:
           version: v3.16.0
@@ -53,6 +53,11 @@ jobs:
           grep -q -e '--act' act.yaml
           grep -q 'readOnlyRootFilesystem: true' shadow.yaml
           grep -q 'runAsNonRoot: true' shadow.yaml
+          if grep -q -e '--scorer=baseline' shadow.yaml; then echo "baseline must be opt-in"; exit 1; fi
+          printf 'floor_ms: 10\nservices:\n  a:\n    in_lat: {median: 5, high: 9}\n' > b.yaml
+          helm template t deploy/helm/meshheal --set targetNamespace=demo --set-file baseline=b.yaml > base.yaml
+          grep -q -e '--scorer=baseline' base.yaml
+          grep -q 'baseline.yaml: |' base.yaml
   frontend:
     runs-on: ubuntu-latest
     strategy:

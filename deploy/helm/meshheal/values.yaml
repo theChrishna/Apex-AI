@@ -2,7 +2,7 @@
 
 image:
   repository: meshheal-controlplane
-  tag: "0.5.1"
+  tag: "0.6.0"
   pullPolicy: IfNotPresent
 
 # shadow (default): the controller only reads. The Role it gets has NO write permission at all.
@@ -29,6 +29,13 @@ settings: {}
 playbook: |
   reroutes: []
   depends: {}
+
+# OPTIONAL learned baseline (Phase 4). Empty = the hand-set rule scorer (the default).
+# Learn one on fault-free traffic: python -m controlplane.learn_baseline --snapshots normal.jsonl --out baseline.yaml
+# then:  helm upgrade ... --set-file baseline=baseline.yaml
+# Measured on real data (topo/results/phase4_*): better than the hand-set rule on both Bookinfo and Online Boutique,
+# but on Boutique it still false-alarmed on 10.5% of normal snapshots. Run it in shadow mode first.
+baseline: ""
 
 metricsPort: 9102
 

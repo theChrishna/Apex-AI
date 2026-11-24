@@ -1,8 +1,8 @@
 # MeshHeal control plane: collector + controller, rule scorer only (no torch, so the image stays small).
-# Build from the repository root:   docker build -f deploy/Dockerfile -t meshheal-controlplane:0.5.1 .
+# Build from the repository root:   docker build -f deploy/Dockerfile -t meshheal-controlplane:0.6.0 .
 # Run a component by naming its module:
-#   docker run --rm meshheal-controlplane:0.5.1 controlplane.run --help
-#   docker run --rm meshheal-controlplane:0.5.1 controlplane.collect --help
+#   docker run --rm meshheal-controlplane:0.6.0 controlplane.run --help
+#   docker run --rm meshheal-controlplane:0.6.0 controlplane.collect --help
 FROM python:3.10-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \

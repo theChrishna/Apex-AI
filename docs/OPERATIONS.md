@@ -13,11 +13,11 @@ Both happen in the same API call, so the recorded state and the weights cannot d
 ## Install (shadow first)
 Build the image (not pushed anywhere) and install:
 ```
-docker build -f deploy/Dockerfile -t meshheal-controlplane:0.5.1 .
+docker build -f deploy/Dockerfile -t meshheal-controlplane:0.6.0 .
 helm install meshheal deploy/helm/meshheal -n meshheal-system --create-namespace --set targetNamespace=<app-namespace>
 kubectl logs -n meshheal-system deploy/meshheal-controlplane -c controller -f
 ```
-With a local k3d cluster, import the image first: `k3d image import meshheal-controlplane:0.5.1 -c <cluster>`.
+With a local k3d cluster, import the image first: `k3d image import meshheal-controlplane:0.6.0 -c <cluster>`.
 `targetNamespace` is required. Prometheus must reach Istio's metrics (default `http://prometheus.istio-system.svc:9090`).
 
 ## Give it a playbook, then read it
@@ -27,6 +27,14 @@ python -m controlplane.playbook_gen --namespace <app-namespace> --out playbook.y
 helm upgrade meshheal deploy/helm/meshheal -n meshheal-system --reuse-values --set-file playbook=playbook.yaml
 ```
 A generated draft is evidence, not a decision: a version that "never called X" may simply have had no traffic. Read each reroute, check it against how the application really works, and only then set `confirmed: true`.
+
+## Optional: a learned baseline instead of the hand-set rule
+The default rule scorer uses a fixed 100 ms scale tuned on Bookinfo; on Online Boutique it false-alarmed on 92% of normal snapshots. Learn a per-service baseline from about 20 minutes of fault-free traffic and pass it to the chart:
+```
+python -m controlplane.learn_baseline --snapshots normal.jsonl --out baseline.yaml
+helm upgrade meshheal deploy/helm/meshheal -n meshheal-system --reuse-values --set-file baseline=baseline.yaml
+```
+Measured results and limits are in `REPORT_PHASE4.md` (Boutique false alarms 92% -> 10.5%, still too high to act on alone). Learn it from traffic you know was healthy: an incident inside the learning window becomes part of "normal".
 
 ## Run in shadow mode long enough to trust it
 Watch the audit log (`SCORED`, `REROUTE`, `ACTION_BLOCKED`) and `/metrics` (`meshheal_events_total`). In shadow mode a `REROUTE` line means "it would have rerouted". Count how many would have been wrong before you let it act. The thresholds (act at risk > 0.85 in 3 of the last 4 checks, release below 0.60) were tuned on Bookinfo with the rule scorer; check them on your own application.

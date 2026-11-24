@@ -42,6 +42,10 @@ spec:
             - --config=/etc/meshheal/meshheal.yaml
             - --snapshots=/data/live_snapshots.jsonl     # not snapshots.jsonl: the collector refuses that name (uploaded data)
             - --metrics-port={{ $port }}
+            {{- if .Values.baseline }}
+            - --scorer=baseline
+            - --baseline=/etc/meshheal/baseline.yaml
+            {{- end }}
             {{- if eq $mode "act" }}
             - --act
             {{- end }}
