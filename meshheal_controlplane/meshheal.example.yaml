@@ -1,0 +1,13 @@
+# Example settings for a mesh that is not Bookinfo. Use it with:
+#   python -m controlplane.run --config meshheal.yaml --snapshots live.jsonl --dry-run
+# Keys are the field names of controlplane/config.py; a misspelled key is an error. Command-line flags
+# (--namespace, --audit, --playbook, --interval) override this file.
+namespace: shop
+prometheus_url: http://localhost:9090
+playbook_path: playbooks/shop.yaml     # draft one with: python -m controlplane.playbook_gen --namespace shop --out playbooks/shop.yaml
+expected_nodes: []                     # [] = accept any set of services; list names to reject snapshots that miss one
+app_label: app                         # pod label holding the service name
+version_label: version                 # pod label holding the version, used when there is no DestinationRule
+# Thresholds were tuned on Bookinfo with the rule scorer. Re-check them on your own mesh before acting.
+act_threshold: 0.85
+release_threshold: 0.60

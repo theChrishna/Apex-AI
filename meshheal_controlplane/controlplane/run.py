@@ -13,6 +13,7 @@ from .audit import AuditLog
 from .cluster import DryRunClient, FakeClient, KubeClient
 from .config import Config
 from .controller import Controller, step_from_file
+from .playbook import DEFAULT_PATH, Playbook
 from .scorer import ResilientScorer, RuleScorer
 from .snapshot import BadSnapshot, parse_snapshot
 
@@ -25,11 +26,11 @@ def build_scorer(name, cfg, gnn_manifest=None, gnn_kill_file=None):
     return ResilientScorer(GnnScorer(gnn_manifest, kill_file=gnn_kill_file), rule, cfg.scorer_timeout_s)
 
 
-def replay(path, cfg, scorer):
+def replay(path, cfg, scorer, playbook=None):
     """Offline: step through every stored snapshot with a simulated clock. Decisions only (no feedback)."""
     audit = AuditLog(None)
     box = {"now": datetime.now(timezone.utc)}
-    ctrl = Controller(cfg, scorer, FakeClient(), audit, clock=lambda: box["now"], dry_run=True)
+    ctrl = Controller(cfg, scorer, FakeClient(), audit, clock=lambda: box["now"], dry_run=True, playbook=playbook)
     n = 0
     with open(path) as f:
         for line in f:
@@ -52,7 +53,9 @@ def replay(path, cfg, scorer):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--snapshots", default="snapshots.jsonl")
-    ap.add_argument("--namespace", default="aws-us-east")
+    ap.add_argument("--config", default=None, help="YAML file of Config settings (see meshheal.example.yaml)")
+    ap.add_argument("--playbook", default=None, help="YAML playbook (default playbooks/bookinfo.yaml)")
+    ap.add_argument("--namespace", default=None)
     ap.add_argument("--scorer", choices=["rule", "gnn"], default="rule")
     ap.add_argument("--gnn-manifest", default="../models/gnn_final_manifest.json",
                     help="written by train_final.py (seed weights sit next to it)")
@@ -60,22 +63,24 @@ def main():
                     help="demo kill switch: while this file exists the GNN raises and the rule fallback scores")
     ap.add_argument("--dry-run", action="store_true", help="read real cluster state, never write")
     ap.add_argument("--replay", action="store_true", help="offline replay of the snapshot file")
-    ap.add_argument("--audit", default="audit_log.jsonl")
+    ap.add_argument("--audit", default=None)
     ap.add_argument("--interval", type=float, default=None)
     a = ap.parse_args()
 
-    cfg = Config(namespace=a.namespace, audit_path=a.audit)
-    if a.interval:
-        cfg.interval_s = a.interval
+    # explicit command-line flags win over the config file, which wins over the defaults
+    cli = dict(namespace=a.namespace, audit_path=a.audit, interval_s=a.interval or None, playbook_path=a.playbook)
+    cfg = Config.from_file(a.config, **cli) if a.config else Config(**{k: v for k, v in cli.items() if v is not None})
+    playbook = Playbook.from_file(cfg.playbook_path or DEFAULT_PATH)
     scorer = build_scorer(a.scorer, cfg, a.gnn_manifest, a.gnn_kill_file)
     if a.replay:
-        return replay(a.snapshots, cfg, scorer)
+        return replay(a.snapshots, cfg, scorer, playbook)
 
-    client = KubeClient(cfg.namespace)
+    client = KubeClient(cfg.namespace, cfg.app_label, cfg.version_label)
     if a.dry_run:
         client = DryRunClient(client)
-    ctrl = Controller(cfg, scorer, client, AuditLog(cfg.audit_path), dry_run=a.dry_run)
-    print(f"control plane up: scorer={a.scorer} dry_run={a.dry_run} ns={cfg.namespace} interval={cfg.interval_s}s")
+    ctrl = Controller(cfg, scorer, client, AuditLog(cfg.audit_path), dry_run=a.dry_run, playbook=playbook)
+    print(f"control plane up: scorer={a.scorer} dry_run={a.dry_run} ns={cfg.namespace} interval={cfg.interval_s}s "
+          f"playbook={len(playbook.reroutes)} reroute(s), {sum(1 for r in playbook.reroutes.values() if not r.confirmed)} unconfirmed")
     while True:
         t0 = time.time()
         try:

@@ -172,3 +172,13 @@ def test_no_kill_file_option_means_no_change(gnn, stored):
     _, snap = stored[-1]
     assert gnn.kill_file is None
     assert scored_event(ResilientScorer(gnn, RuleScorer(100.0), 2.0), snap)["source"] == "primary"
+
+
+def test_snapshot_with_services_the_model_does_not_know_falls_back_to_rule(gnn, stored):
+    _, snap = stored[0]
+    extra = type(snap)(ts=snap.ts, nodes=snap.nodes + [{"id": "cart", "region": "x"}], edges=snap.edges)
+    with pytest.raises(ValueError, match="does not know service"):
+        gnn.score(node_stats(extra), extra)
+    rs = ResilientScorer(gnn, RuleScorer(100.0), timeout_s=2.0)
+    res = as_result(rs, node_stats(extra), extra)
+    assert res.source == "fallback" and "cart" in res.note

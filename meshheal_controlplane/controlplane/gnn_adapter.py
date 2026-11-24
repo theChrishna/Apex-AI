@@ -78,5 +78,8 @@ class GnnScorer:
             raise RuntimeError(f"GNN disabled by kill file {self.kill_file}")
         if snap is None:
             raise ValueError("GnnScorer needs the snapshot")
+        unknown = sorted({n["id"] for n in snap.nodes} - set(self.node_vocab))
+        if unknown:   # the model only knows its training services; scoring a subset would hide the rest
+            raise ValueError(f"model does not know service(s): {', '.join(unknown)}")
         runs = self.per_seed(snap)
         return {n: sum(r[n] for r in runs) / len(runs) for n in self.node_vocab}

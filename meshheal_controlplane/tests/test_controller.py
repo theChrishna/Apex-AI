@@ -278,3 +278,50 @@ def test_ratings_culprit_still_rerouted_in_fresh_controller():
     ev = run(ctrl, box, 3, ratings_ms=150)
     assert [e["culprit"] for e in events(ev, "REROUTE")] == ["ratings"]
     assert not events(ev, "SUPPRESSED_VICTIM")
+
+
+# ---------------------------------------------------------------- Phase 2: playbook file, unconfirmed plans, failed writes
+def _playbook(confirmed):
+    from controlplane.playbook import Playbook
+    return Playbook.from_dict({
+        "reroutes": [{"culprit": "ratings", "virtual_service": "reviews", "target_subset": "v1",
+                      "normal_weights": {"v1": 34, "v2": 33, "v3": 33}, "reason": "r", "confirmed": confirmed}],
+        "depends": {"reviews": {"v1": [], "v2": ["ratings"], "v3": ["ratings"]}, "productpage": {"*": ["details", "reviews"]}}})
+
+
+def _make_pb(playbook, client=None):
+    box = {"now": T0}
+    cfg = Config()
+    ctrl = Controller(cfg, RuleScorer(cfg.self_lat_full_ms), client or FakeClient(), AuditLog(None),
+                      clock=lambda: box["now"], playbook=playbook)
+    return ctrl, box
+
+
+def test_unconfirmed_generated_plan_is_never_executed():
+    client = FakeClient()
+    ctrl, box = _make_pb(_playbook(confirmed=False), client)
+    ev = run(ctrl, box, 6, ratings_ms=150)
+    assert not events(ev, "REROUTE") and not ctrl.active and client.calls == []
+    blocked = events(ev, "ACTION_BLOCKED")
+    assert blocked and blocked[0]["reason"] == "playbook_unconfirmed"
+
+
+def test_confirmed_plan_from_a_passed_in_playbook_acts():
+    client = FakeClient()
+    ctrl, box = _make_pb(_playbook(confirmed=True), client)
+    ev = run(ctrl, box, 6, ratings_ms=150)
+    assert len(events(ev, "REROUTE")) == 1 and client.weights["reviews"]["v1"] == 100
+
+
+class _RefusingClient(FakeClient):
+    def set_weights(self, virtual_service, weights):
+        from controlplane.cluster import ClusterError
+        raise ClusterError("VirtualService reviews: refusing to change it")
+
+
+def test_refused_write_is_logged_and_leaves_state_unchanged():
+    ctrl, box = _make_pb(_playbook(confirmed=True), _RefusingClient())
+    ev = run(ctrl, box, 6, ratings_ms=150)
+    failed = events(ev, "ACTION_FAILED")
+    assert failed and failed[0]["attempted"] == "REROUTE" and "refusing" in failed[0]["error"]
+    assert not events(ev, "REROUTE") and not ctrl.active and "ratings" not in ctrl.last_action

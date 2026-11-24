@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
 
 @dataclass
@@ -21,4 +21,27 @@ class Config:
     blocked_relog_s: float = 60.0       # don't spam identical ACTION_BLOCKED lines
     namespace: str = "aws-us-east"
     audit_path: str = "audit_log.jsonl"
+    # Services that must be present in every snapshot, else the snapshot is rejected. The default is the
+    # Bookinfo demo (kept for backward compatibility); set `expected_nodes: []` in a config file to accept any mesh.
     expected_nodes: tuple = ("productpage", "details", "reviews", "ratings")
+    prometheus_url: str = "http://localhost:9090"
+    app_label: str = "app"              # pod label holding the service name
+    version_label: str = "version"      # pod label holding the version/subset (fallback when no DestinationRule)
+    playbook_path: str = None           # YAML playbook; None = playbooks/bookinfo.yaml
+
+    @classmethod
+    def from_file(cls, path, **overrides):
+        """Load a YAML file whose keys are Config field names. Unknown keys are an error (typos matter here)."""
+        import yaml
+        with open(path, encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+        if not isinstance(data, dict):
+            raise ValueError(f"{path}: expected a mapping of setting -> value")
+        data.update({k: v for k, v in overrides.items() if v is not None})
+        known = {f.name for f in fields(cls)}
+        unknown = sorted(set(data) - known)
+        if unknown:
+            raise ValueError(f"{path}: unknown setting(s) {', '.join(unknown)}; valid: {', '.join(sorted(known))}")
+        if "expected_nodes" in data:
+            data["expected_nodes"] = tuple(data["expected_nodes"] or ())
+        return cls(**data)

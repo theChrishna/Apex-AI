@@ -1,0 +1,20 @@
+# Playbook for the Istio Bookinfo demo (reproduces the original hardcoded PLAYBOOK and DEPENDS).
+# reroutes: what the controller may do when `culprit` is the degraded service.
+#   virtual_service  Istio VirtualService to change (its host is the service whose traffic is moved)
+#   target_subset    subset that receives the traffic
+#   normal_weights   subset -> percent, restored on release (must sum to 100)
+#   confirmed        a human has checked this plan. The controller refuses unconfirmed plans.
+# depends: service -> subset ("*" = any) -> services it calls. Used to avoid routing into the culprit
+#   and to recognise victims of an active reroute.
+reroutes:
+  - culprit: ratings
+    virtual_service: reviews
+    target_subset: v1
+    normal_weights: {v1: 34, v2: 33, v3: 33}
+    reason: reviews-v1 does not call ratings
+    confirmed: true
+depends:
+  productpage: {"*": [details, reviews]}
+  details: {"*": []}
+  reviews: {v1: [], v2: [ratings], v3: [ratings]}
+  ratings: {"*": []}
