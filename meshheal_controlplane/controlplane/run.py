@@ -1,8 +1,9 @@
 """CLI.
 
-Live (shadow first!):   python -m controlplane.run --snapshots snapshots.jsonl --dry-run
-Live (acting):          python -m controlplane.run --snapshots snapshots.jsonl
-Replay stored data:     python -m controlplane.run --snapshots snapshots.jsonl --replay
+Live, shadow (the default: reads the cluster, never writes):   python -m controlplane.run --snapshots snapshots.jsonl
+Live, acting (writes VirtualServices; needs --act):            python -m controlplane.run --snapshots snapshots.jsonl --act
+Replay stored data (no cluster):                               python -m controlplane.run --snapshots snapshots.jsonl --replay
+--dry-run is still accepted and means the same as the default.
 """
 import argparse
 import json
@@ -13,6 +14,7 @@ from .audit import AuditLog
 from .cluster import DryRunClient, FakeClient, KubeClient
 from .config import Config
 from .controller import Controller, step_from_file
+from .health import Health, start_server
 from .playbook import DEFAULT_PATH, Playbook
 from .scorer import ResilientScorer, RuleScorer
 from .snapshot import BadSnapshot, parse_snapshot
@@ -50,7 +52,14 @@ def replay(path, cfg, scorer, playbook=None):
     print(f"replayed {n} snapshots")
 
 
-def main():
+def resolve_dry_run(ap, a):
+    """Shadow mode (no writes) unless --act was given."""
+    if a.act and a.dry_run:
+        ap.error("--act and --dry-run contradict each other")
+    return not a.act
+
+
+def build_parser():
     ap = argparse.ArgumentParser()
     ap.add_argument("--snapshots", default="snapshots.jsonl")
     ap.add_argument("--config", default=None, help="YAML file of Config settings (see meshheal.example.yaml)")
@@ -61,11 +70,20 @@ def main():
                     help="written by train_final.py (seed weights sit next to it)")
     ap.add_argument("--gnn-kill-file", default=None,
                     help="demo kill switch: while this file exists the GNN raises and the rule fallback scores")
-    ap.add_argument("--dry-run", action="store_true", help="read real cluster state, never write")
+    ap.add_argument("--act", action="store_true",
+                    help="ALLOW cluster writes. Without it the controller is in shadow mode and only reads.")
+    ap.add_argument("--dry-run", action="store_true", help="shadow mode (the default); kept for older commands")
     ap.add_argument("--replay", action="store_true", help="offline replay of the snapshot file")
     ap.add_argument("--audit", default=None)
     ap.add_argument("--interval", type=float, default=None)
-    a = ap.parse_args()
+    ap.add_argument("--metrics-port", type=int, default=0, help="serve /healthz and /metrics on this port (0 = off)")
+    return ap
+
+
+def main(argv=None):
+    ap = build_parser()
+    a = ap.parse_args(argv)
+    dry_run = resolve_dry_run(ap, a)         # safe by default: writing to the cluster has to be asked for
 
     # explicit command-line flags win over the config file, which wins over the defaults
     cli = dict(namespace=a.namespace, audit_path=a.audit, interval_s=a.interval or None, playbook_path=a.playbook)
@@ -75,18 +93,29 @@ def main():
     if a.replay:
         return replay(a.snapshots, cfg, scorer, playbook)
 
-    client = KubeClient(cfg.namespace, cfg.app_label, cfg.version_label)
-    if a.dry_run:
+    client = KubeClient(cfg.namespace, cfg.app_label, cfg.version_label, cfg.state_annotation, cfg.control_configmap)
+    if dry_run:
         client = DryRunClient(client)
-    ctrl = Controller(cfg, scorer, client, AuditLog(cfg.audit_path), dry_run=a.dry_run, playbook=playbook)
-    print(f"control plane up: scorer={a.scorer} dry_run={a.dry_run} ns={cfg.namespace} interval={cfg.interval_s}s "
-          f"playbook={len(playbook.reroutes)} reroute(s), {sum(1 for r in playbook.reroutes.values() if not r.confirmed)} unconfirmed")
+    ctrl = Controller(cfg, scorer, client, AuditLog(cfg.audit_path, echo=cfg.audit_stdout), dry_run=dry_run, playbook=playbook)
+    mode = ("SHADOW MODE: reading only, no cluster writes. Pass --act to allow writes." if dry_run
+            else "ACTING: this controller WILL change VirtualServices.")
+    print(f"control plane up: {mode}\n  scorer={a.scorer} ns={cfg.namespace} interval={cfg.interval_s}s "
+          f"playbook={len(playbook.reroutes)} reroute(s), {sum(1 for r in playbook.reroutes.values() if not r.confirmed)} unconfirmed; "
+          f"max {cfg.max_actions_per_hour} reroutes/hour, auto-release after {cfg.max_reroute_s:.0f}s", flush=True)
+    health = Health(ctrl, cfg.interval_s)
+    if a.metrics_port:
+        server, _ = start_server(health, a.metrics_port)
+        print(f"  /healthz and /metrics on port {server.server_address[1]}", flush=True)
+    ctrl.reconcile()                         # pick up reroutes recorded before a restart
     while True:
         t0 = time.time()
+        ok = True
         try:
             step_from_file(ctrl, a.snapshots)
         except Exception as e:   # the loop must survive anything
             ctrl._log("LOOP_ERROR", error=repr(e))
+            ok = False
+        health.loop_done(ok)
         time.sleep(max(0.0, cfg.interval_s - (time.time() - t0)))
 
 

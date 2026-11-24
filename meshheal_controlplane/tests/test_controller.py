@@ -314,7 +314,7 @@ def test_confirmed_plan_from_a_passed_in_playbook_acts():
 
 
 class _RefusingClient(FakeClient):
-    def set_weights(self, virtual_service, weights):
+    def set_weights(self, virtual_service, weights, state=None):
         from controlplane.cluster import ClusterError
         raise ClusterError("VirtualService reviews: refusing to change it")
 

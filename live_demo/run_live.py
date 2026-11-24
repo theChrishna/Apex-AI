@@ -245,7 +245,7 @@ def main():
             KILL_FILE.touch()
             log(f"kill file touched: {KILL_FILE}")
         cmd = [sys.executable, "-m", "controlplane.run", "--scorer", "gnn", "--gnn-kill-file", str(KILL_FILE),
-               "--snapshots", str(SNAPSHOTS), "--audit", str(audit)]   # no --dry-run: this controller acts
+               "--snapshots", str(SNAPSHOTS), "--audit", str(audit), "--act"]   # --act: this controller really writes
         log("starting ACTING controller: " + " ".join(cmd))
         controller = subprocess.Popen(cmd, cwd=ROOT / "meshheal_controlplane", stdout=open(DEMO / f"controller_{scenario}_{stamp}.log", "w"), stderr=subprocess.STDOUT)
         want = "fallback" if scenario == "B" else "primary"

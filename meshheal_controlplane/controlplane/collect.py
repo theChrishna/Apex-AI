@@ -25,8 +25,15 @@ def build_snapshot(query, ns, window="1m", now=None):
             "nodes": nodes_from_edges(ok, ns), "edges": ok, "skipped_edges": len(edges) - len(ok)}
 
 
-def append_snapshot(path, snap):
+def append_snapshot(path, snap, max_bytes=0):
+    """Append one snapshot. With max_bytes, a file that has grown past it is moved to <path>.1 first (one previous
+    file is kept), so a long-running collector cannot fill its disk."""
     snap = {k: v for k, v in snap.items() if k != "skipped_edges"}
+    try:
+        if max_bytes and os.path.getsize(path) > max_bytes:
+            os.replace(path, path + ".1")
+    except OSError:
+        pass
     with open(path, "a", encoding="utf-8") as f:
         f.write(json.dumps(snap) + "\n")
 
@@ -38,6 +45,7 @@ def main(argv=None):
     ap.add_argument("--out", required=True)
     ap.add_argument("--interval", type=float, default=15.0)
     ap.add_argument("--once", action="store_true", help="collect one snapshot and exit")
+    ap.add_argument("--max-mb", type=float, default=50.0, help="rotate the output file when it passes this size (0 = never)")
     a = ap.parse_args(argv)
     if os.path.basename(a.out) in PROTECTED:
         ap.error(f"{a.out} is an uploaded data file: choose another --out")
@@ -46,7 +54,7 @@ def main(argv=None):
         try:
             snap = build_snapshot(query, a.namespace)
             if snap:
-                append_snapshot(a.out, snap)
+                append_snapshot(a.out, snap, int(a.max_mb * 1024 * 1024))
                 print(f"[{datetime.now():%H:%M:%S}] saved {len(snap['nodes'])} nodes, {len(snap['edges'])} edges "
                       f"({snap['skipped_edges']} skipped)", flush=True)
             else:

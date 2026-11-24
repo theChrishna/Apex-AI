@@ -28,6 +28,12 @@ class Config:
     app_label: str = "app"              # pod label holding the service name
     version_label: str = "version"      # pod label holding the version/subset (fallback when no DestinationRule)
     playbook_path: str = None           # YAML playbook; None = playbooks/bookinfo.yaml
+    # --- Phase 5 safety settings
+    max_actions_per_hour: int = 6       # new REROUTEs allowed per rolling hour (stops flapping); 0 = unlimited
+    max_reroute_s: float = 3600.0       # a reroute older than this is released automatically; 0 = never
+    control_configmap: str = "meshheal-control"   # ConfigMap in the namespace; data paused: "true" freezes ALL writes
+    state_annotation: str = "meshheal.io/state"   # VirtualService annotation that records an active reroute
+    audit_stdout: bool = False          # also print every audit event as one JSON line (what a container needs for kubectl logs)
 
     @classmethod
     def from_file(cls, path, **overrides):

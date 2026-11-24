@@ -1,5 +1,8 @@
 """Cluster access. FakeClient for tests/replay, KubeClient for the real cluster, DryRunClient wrapper."""
 import copy
+import json
+
+KEEP = object()        # set_weights(..., state=KEEP): leave the recorded reroute state as it is
 
 
 class ClusterError(Exception):
@@ -10,14 +13,26 @@ class FakeClient:
     def __init__(self, ready=None):
         self.ready = ready or {}          # (service, subset) -> bool; default True
         self.weights = {}                 # virtual_service -> {subset: weight}
+        self.states = {}                  # virtual_service -> recorded reroute state (what the annotation holds)
+        self.paused = False
         self.calls = []
 
     def subset_ready(self, service, subset):
         return self.ready.get((service, subset), True)
 
-    def set_weights(self, virtual_service, weights):
+    def set_weights(self, virtual_service, weights, state=KEEP):
         self.weights[virtual_service] = dict(weights)
+        if state is None:
+            self.states.pop(virtual_service, None)
+        elif state is not KEEP:
+            self.states[virtual_service] = copy.deepcopy(state)
         self.calls.append((virtual_service, dict(weights)))
+
+    def list_states(self):
+        return copy.deepcopy(self.states)
+
+    def is_paused(self):
+        return self.paused
 
 
 def _host_names(vs, virtual_service):
@@ -72,6 +87,36 @@ def apply_weights(vs, virtual_service, weights):
     return new
 
 
+def apply_state(vs, key, state):
+    """Copy of `vs` with the reroute-state annotation set (dict), removed (None) or left alone (KEEP)."""
+    if state is KEEP:
+        return vs
+    new = copy.deepcopy(vs)
+    meta = new.setdefault("metadata", {})
+    ann = dict(meta.get("annotations") or {})
+    if state is None:
+        ann.pop(key, None)
+    else:
+        ann[key] = json.dumps(state, sort_keys=True)
+    if ann:
+        meta["annotations"] = ann
+    else:
+        meta.pop("annotations", None)
+    return new
+
+
+def read_state(vs, key):
+    """The recorded reroute state of a VirtualService: a dict, None if there is none, or {"_error": ...} if corrupt."""
+    raw = ((vs.get("metadata") or {}).get("annotations") or {}).get(key)
+    if raw is None:
+        return None
+    try:
+        st = json.loads(raw)
+        return st if isinstance(st, dict) else {"_error": "not an object"}
+    except (TypeError, ValueError):
+        return {"_error": "unparseable"}
+
+
 def catch_all_weights(vs):
     """{subset: weight} of the catch-all route, or None when there is not exactly one (read-only helper)."""
     names = _host_names(vs, vs.get("metadata", {}).get("name", ""))
@@ -86,8 +131,11 @@ def catch_all_weights(vs):
 
 class KubeClient:
     GROUP, VERSION = "networking.istio.io", "v1"
+    state_annotation = "meshheal.io/state"          # class defaults: tests build the client without __init__
+    control_configmap = "meshheal-control"
 
-    def __init__(self, namespace, app_label="app", version_label="version"):
+    def __init__(self, namespace, app_label="app", version_label="version",
+                 state_annotation="meshheal.io/state", control_configmap="meshheal-control"):
         from kubernetes import client, config   # lazy: not needed for tests/replay
         try:
             config.load_kube_config()
@@ -95,6 +143,7 @@ class KubeClient:
             config.load_incluster_config()
         self.ns = namespace
         self.app_label, self.version_label = app_label, version_label
+        self.state_annotation, self.control_configmap = state_annotation, control_configmap
         self.core = client.CoreV1Api()
         self.custom = client.CustomObjectsApi()
 
@@ -129,15 +178,37 @@ class KubeClient:
     def list_virtual_services(self):
         return self.custom.list_namespaced_custom_object(self.GROUP, self.VERSION, self.ns, "virtualservices")["items"]
 
+    def list_states(self):
+        """{virtual service name: recorded reroute state} for every VirtualService this controller marked."""
+        out = {}
+        for vs in self.list_virtual_services():
+            st = read_state(vs, self.state_annotation)
+            if st is not None:
+                out[vs["metadata"]["name"]] = st
+        return out
+
+    def is_paused(self):
+        """True when the control ConfigMap says paused: "true". No ConfigMap = not paused. Any other error raises, and
+        the controller then treats it as paused (fail closed)."""
+        from kubernetes.client.rest import ApiException
+        try:
+            cm = self.core.read_namespaced_config_map(self.control_configmap, self.ns)
+        except ApiException as e:
+            if e.status == 404:
+                return False
+            raise
+        return str((cm.data or {}).get("paused", "false")).strip().lower() == "true"
+
     # ---- write --------------------------------------------------------------------------------
-    def set_weights(self, virtual_service, weights):
-        """Read-modify-write: change only the destination weights of the catch-all route. `replace` carries the
+    def set_weights(self, virtual_service, weights, state=KEEP):
+        """Read-modify-write: change only the destination weights of the catch-all route and, in the SAME write, the
+        reroute-state annotation (so weights and recorded state can never disagree). `replace` carries the
         resourceVersion we read, so if anyone else edited the object meanwhile the API server answers 409 and we
         stop instead of overwriting their change."""
         from kubernetes.client.rest import ApiException
         try:
             current = self.get_virtual_service(virtual_service)
-            updated = apply_weights(current, virtual_service, weights)
+            updated = apply_state(apply_weights(current, virtual_service, weights), self.state_annotation, state)
             self.custom.replace_namespaced_custom_object(
                 self.GROUP, self.VERSION, self.ns, "virtualservices", virtual_service, updated)
         except ApiException as e:
@@ -153,7 +224,15 @@ class DryRunClient:
     def subset_ready(self, service, subset):
         return self.inner.subset_ready(service, subset)
 
-    def set_weights(self, virtual_service, weights):
+    def list_states(self):
+        fn = getattr(self.inner, "list_states", None)
+        return fn() if fn else {}
+
+    def is_paused(self):
+        fn = getattr(self.inner, "is_paused", None)
+        return fn() if fn else False
+
+    def set_weights(self, virtual_service, weights, state=KEEP):
         getter = getattr(self.inner, "get_virtual_service", None)
         if getter:   # still read-only: check the real object so a dry run reveals a patch that would be refused
             apply_weights(getter(virtual_service), virtual_service, weights)
