@@ -1,0 +1,10 @@
+{"episode": 1, "node": "paymentservice", "delay_ms": 100, "start": "2026-11-24T08:10:54.086063+00:00", "end": "2026-11-24T08:15:54.308305+00:00", "completed": true}
+{"episode": 2, "node": "recommendationservice", "delay_ms": 50, "start": "2026-11-24T08:18:54.501869+00:00", "end": "2026-11-24T08:23:54.722114+00:00", "completed": true}
+{"episode": 3, "node": "shippingservice", "delay_ms": 200, "start": "2026-11-24T08:26:54.931723+00:00", "end": "2026-11-24T08:31:55.108035+00:00", "completed": true}
+{"episode": 4, "node": "productcatalogservice", "delay_ms": 50, "start": "2026-11-24T08:34:55.312033+00:00", "end": "2026-11-24T08:39:55.579738+00:00", "completed": true}
+{"episode": 5, "node": "frontend", "delay_ms": 200, "start": "2026-11-24T08:42:55.745335+00:00", "end": "2026-11-24T08:47:56.257975+00:00", "completed": true}
+{"episode": 6, "node": "currencyservice", "delay_ms": 200, "start": "2026-11-24T08:50:57.580871+00:00", "end": "2026-11-24T08:55:57.898120+00:00", "completed": true}
+{"episode": 7, "node": "adservice", "delay_ms": 50, "start": "2026-11-24T08:58:58.276591+00:00", "end": "2026-11-24T09:03:58.644443+00:00", "completed": true}
+{"episode": 8, "node": "emailservice", "delay_ms": 200, "start": "2026-11-24T09:06:58.815589+00:00", "end": "2026-11-24T09:11:59.026491+00:00", "completed": true}
+{"episode": 9, "node": "cartservice", "delay_ms": 150, "start": "2026-11-24T09:14:59.345808+00:00", "end": "2026-11-24T09:19:59.567518+00:00", "completed": true}
+{"episode": 10, "node": "checkoutservice", "delay_ms": 100, "start": "2026-11-24T09:22:59.758050+00:00", "end": "2026-11-24T09:28:00.011024+00:00", "completed": true}
