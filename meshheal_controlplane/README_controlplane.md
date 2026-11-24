@@ -9,10 +9,10 @@ Every decision is appended to audit_log.jsonl.
 
 Run (from the project folder, venv active):
   pip install -r ../requirements-dev.txt   # or run ../scripts/setup.ps1 (Windows) / ../scripts/setup.sh
-  python -m pytest -q                                             # 90 tests, all pass on a clean install (torch + kubernetes installed), no cluster needed
+  python -m pytest -q                                             # 117 tests, all pass on a clean install (torch + kubernetes installed), no cluster needed
   python -m controlplane.run --snapshots snapshots.jsonl --replay # decisions on your stored data
-  python -m controlplane.run --snapshots snapshots.jsonl --dry-run  # live shadow mode: never writes
-  python -m controlplane.run --snapshots snapshots.jsonl            # live, acting
+  python -m controlplane.run --snapshots snapshots.jsonl            # live SHADOW mode (the default): reads, never writes
+  python -m controlplane.run --snapshots snapshots.jsonl --act      # live, acting: the only way to write to the cluster
 
 GNN scorer (default is --scorer rule):
   --scorer gnn            GNN is the primary scorer; rule fallback on timeout (500 ms) or error
@@ -45,3 +45,9 @@ catch-all route the change is refused and logged as `ACTION_FAILED`; dry-run rep
 Verified: unit tests, and a read-only check against the live Bookinfo VirtualService. The real write (`replace`) has
 not yet been run against a live cluster.
 
+## Running it for real (Phase 5)
+Shadow mode is the default; `--act` is required to write. Reroutes are recorded on the VirtualService (annotation `meshheal.io/state`) in the same
+write as the weights, so a restart picks them up (`RECONCILED`) and a reroute is never permanent (`max_reroute_s`, default 1 h). `max_actions_per_hour`
+(default 6) limits new reroutes, and a `meshheal-control` ConfigMap with `paused: "true"` freezes all writes. `--metrics-port` serves `/healthz` and
+`/metrics`. Container image: `deploy/Dockerfile`; Helm chart: `deploy/helm/meshheal` (shadow mode has a Role without any write verb).
+The full runbook, failure behaviour and limits are in `docs/OPERATIONS.md`.

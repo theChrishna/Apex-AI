@@ -29,4 +29,4 @@ Replay without a cluster: `python Frontend_v3/api/meshheal_api.py --mode replay 
 ## Live mode (needs a cluster)
 Needs Docker, k3d, kubectl and istioctl; see `live_demo/README.md` and `docs/DEMO_SCRIPT.md`.
 On Windows/WSL2 with cgroup v1 use a k3s image up to v1.33 (`k3d cluster create meshheal --image rancher/k3s:v1.33.5-k3s1 ...`); k3s v1.35 refuses to start there.
-Never run kubectl write commands against a cluster you care about without reading the command first. The controller defaults to acting unless you pass `--dry-run`.
+Never run kubectl write commands against a cluster you care about without reading the command first. The controller is in shadow mode (reads only) unless you pass `--act`. Deployment, the pause switch and what it can write are in `docs/OPERATIONS.md`.
