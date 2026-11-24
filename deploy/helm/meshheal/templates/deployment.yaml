@@ -1,0 +1,93 @@
+{{- $target := include "meshheal.target" . -}}
+{{- $mode := include "meshheal.mode" . -}}
+{{- $port := int .Values.metricsPort -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "meshheal.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "meshheal.labels" . | nindent 4 }}
+spec:
+  replicas: 1                       # one controller: there is no leader election
+  strategy:
+    type: Recreate                  # never two controllers at once, not even during an upgrade
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: meshheal
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        {{- include "meshheal.labels" . | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ $port | quote }}
+        prometheus.io/path: /metrics
+    spec:
+      serviceAccountName: {{ include "meshheal.fullname" . }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: controller
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - controlplane.run
+            - --config=/etc/meshheal/meshheal.yaml
+            - --snapshots=/data/live_snapshots.jsonl     # not snapshots.jsonl: the collector refuses that name (uploaded data)
+            - --metrics-port={{ $port }}
+            {{- if eq $mode "act" }}
+            - --act
+            {{- end }}
+          ports:
+            - name: metrics
+              containerPort: {{ $port }}
+          livenessProbe:
+            httpGet: {path: /healthz, port: metrics}
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            httpGet: {path: /healthz, port: metrics}
+            periodSeconds: 15
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          securityContext: &container-security
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - {name: data, mountPath: /data}
+            - {name: config, mountPath: /etc/meshheal, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+        - name: collector
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - controlplane.collect
+            - --namespace={{ $target }}
+            - --prometheus-url={{ .Values.prometheusUrl }}
+            - --out=/data/live_snapshots.jsonl
+            - --interval={{ .Values.intervalSeconds }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          securityContext: *container-security
+          volumeMounts:
+            - {name: data, mountPath: /data}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: data
+          emptyDir:
+            sizeLimit: {{ .Values.dataVolumeSizeLimit }}
+        - name: tmp
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: {{ include "meshheal.fullname" . }}

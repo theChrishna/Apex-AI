@@ -1,0 +1,44 @@
+# MeshHeal Helm values.
+
+image:
+  repository: meshheal-controlplane
+  tag: "0.5.1"
+  pullPolicy: IfNotPresent
+
+# shadow (default): the controller only reads. The Role it gets has NO write permission at all.
+# act:              the controller may update VirtualServices (one catch-all route's weights + its state annotation).
+#                   Only switch this on after the playbook has been read and its reroutes set to confirmed: true.
+mode: shadow
+
+# REQUIRED. The namespace of the mesh application to watch. The Role is created there, not cluster-wide.
+targetNamespace: ""
+
+prometheusUrl: http://prometheus.istio-system.svc:9090
+intervalSeconds: 15
+
+# Extra controller settings (see meshheal_controlplane/meshheal.example.yaml), e.g.
+#   act_threshold: 0.85
+#   max_actions_per_hour: 6
+#   max_reroute_s: 3600
+#   control_configmap: meshheal-control
+settings: {}
+
+# The playbook. Draft one with: python -m controlplane.playbook_gen --namespace <ns> --out playbook.yaml
+# and pass it with:  helm install ... --set-file playbook=playbook.yaml
+# An empty playbook means the controller can score and log but has nothing it is allowed to do.
+playbook: |
+  reroutes: []
+  depends: {}
+
+metricsPort: 9102
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 250m
+    memory: 192Mi
+
+# size limit of the scratch volume holding the snapshot file and the audit log (both rotate at 50 MB)
+dataVolumeSizeLimit: 200Mi

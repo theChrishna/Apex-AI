@@ -1,0 +1,53 @@
+{{- $target := include "meshheal.target" . -}}
+{{- $mode := include "meshheal.mode" . -}}
+{{- $control := default "meshheal-control" .Values.settings.control_configmap -}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "meshheal.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "meshheal.labels" . | nindent 4 }}
+---
+# Namespaced Role in the watched namespace only: nothing cluster-wide, no secrets, no pod changes.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "meshheal.fullname" . }}
+  namespace: {{ $target }}
+  labels:
+    {{- include "meshheal.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["networking.istio.io"]
+    resources: ["virtualservices"]
+    {{- if eq $mode "act" }}
+    verbs: ["get", "list", "update"]      # act mode: change one catch-all route's weights and the state annotation
+    {{- else }}
+    verbs: ["get", "list"]                # shadow mode: read only, no write verb exists
+    {{- end }}
+  - apiGroups: ["networking.istio.io"]
+    resources: ["destinationrules"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: [{{ $control | quote }}]   # the pause switch, readable only; it is never created by this chart
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "meshheal.fullname" . }}
+  namespace: {{ $target }}
+  labels:
+    {{- include "meshheal.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "meshheal.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "meshheal.fullname" . }}
+    namespace: {{ .Release.Namespace }}

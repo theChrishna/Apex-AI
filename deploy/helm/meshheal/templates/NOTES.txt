@@ -1,0 +1,17 @@
+MeshHeal control plane installed in namespace {{ .Release.Namespace }}, watching namespace {{ include "meshheal.target" . }}.
+
+Mode: {{ include "meshheal.mode" . | upper }}
+{{- if eq (include "meshheal.mode" .) "shadow" }}
+  The controller only READS. Its Role has no write verb, so it cannot change anything even if it wanted to.
+  Watch what it would do:  kubectl logs -n {{ .Release.Namespace }} deploy/{{ include "meshheal.fullname" . }} -c controller
+{{- else }}
+  The controller CAN update VirtualServices in {{ include "meshheal.target" . }}.
+  It only acts on reroutes marked `confirmed: true` in the playbook.
+{{- end }}
+
+Pause everything (the controller stops writing within one loop; it keeps scoring and logging):
+  kubectl create configmap {{ default "meshheal-control" .Values.settings.control_configmap }} --from-literal=paused=true -n {{ include "meshheal.target" . }}
+Resume:
+  kubectl delete configmap {{ default "meshheal-control" .Values.settings.control_configmap }} -n {{ include "meshheal.target" . }}
+
+Health and metrics: port {{ .Values.metricsPort }}  (/healthz, /metrics)

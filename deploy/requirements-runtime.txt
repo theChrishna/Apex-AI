@@ -1,0 +1,4 @@
+# Runtime dependencies of the container image (rule scorer path). Same tested versions as ../requirements.txt.
+kubernetes==37.0.3
+PyYAML==6.0.4
+requests==2.34.2

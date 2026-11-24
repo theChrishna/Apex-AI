@@ -26,6 +26,33 @@ jobs:
         run: python -m pytest -q test_build_dataset_v3.py
       - name: Phase 3 tests (topology builder, simulator, evaluation harness)
         run: python -m pytest -q topo/tests
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the container image (not pushed)
+        run: docker build -f deploy/Dockerfile -t meshheal-controlplane:ci .
+      - name: Image runs as non-root and needs no torch
+        run: |
+          docker run --rm meshheal-controlplane:ci controlplane.run --help | grep -e '--act'
+          test "$(docker run --rm --entrypoint id meshheal-controlplane:ci -u)" = "10001"
+          docker run --rm --entrypoint python meshheal-controlplane:ci -c "import sys, controlplane.run, controlplane.collect; assert 'torch' not in sys.modules"
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.16.0
+      - name: Lint and render the Helm chart
+        run: |
+          helm lint deploy/helm/meshheal --set targetNamespace=demo
+          helm template t deploy/helm/meshheal --set targetNamespace=demo > shadow.yaml
+          helm template t deploy/helm/meshheal --set targetNamespace=demo --set mode=act > act.yaml
+          if helm template t deploy/helm/meshheal > /dev/null 2>&1; then echo "targetNamespace must be required"; exit 1; fi
+          if helm template t deploy/helm/meshheal --set targetNamespace=demo --set mode=oops > /dev/null 2>&1; then echo "mode must be validated"; exit 1; fi
+          if grep -q '"update"' shadow.yaml; then echo "shadow mode must have no write verb"; exit 1; fi
+          if grep -q -e '--act' shadow.yaml; then echo "shadow mode must not pass --act"; exit 1; fi
+          grep -q '"update"' act.yaml
+          grep -q -e '--act' act.yaml
+          grep -q 'readOnlyRootFilesystem: true' shadow.yaml
+          grep -q 'runAsNonRoot: true' shadow.yaml
   frontend:
     runs-on: ubuntu-latest
     strategy:

@@ -1,0 +1,15 @@
+{{- $target := include "meshheal.target" . -}}
+{{- $base := dict "namespace" $target "prometheus_url" .Values.prometheusUrl "interval_s" (float64 .Values.intervalSeconds) "expected_nodes" (list) "playbook_path" "/etc/meshheal/playbook.yaml" "audit_path" "/data/audit.jsonl" "audit_stdout" true -}}
+{{- $cfg := merge (deepCopy .Values.settings) $base -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "meshheal.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "meshheal.labels" . | nindent 4 }}
+data:
+  meshheal.yaml: |
+    {{- toYaml $cfg | nindent 4 }}
+  playbook.yaml: |
+    {{- .Values.playbook | nindent 4 }}
