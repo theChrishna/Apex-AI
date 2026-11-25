@@ -2,5 +2,5 @@ apiVersion: v2
 name: meshheal
 description: MeshHeal control plane (collector + controller). Shadow mode by default; it cannot write to the cluster unless mode=act.
 type: application
-version: 0.7.0
-appVersion: "0.7.0"
+version: 0.7.1
+appVersion: "0.7.1"

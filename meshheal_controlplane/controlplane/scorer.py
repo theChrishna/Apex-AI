@@ -119,7 +119,11 @@ class EdgeScorer:
 
     For each service S:
       latency: the incoming edge furthest above its normal high (in units of that edge's spread), minus, in ms, the worst
-               excess on S's outgoing edges (a victim cancels against the edge it waits on)
+               excess on S's outgoing edges (a victim cancels against the edge it waits on). With `fanout` (default),
+               the larger of that and the sum over outgoing edges of excess x calls per incoming request (capped at
+               `max_calls`): a caller that calls a slow service several times per request waits several times as long
+               (the live canary test, REPORT_PHASE6.md). Calls in parallel make this over-subtract, which can only
+               lower the caller's score.
       errors:  the incoming error fraction above normal, minus the worst outgoing error excess (a service that only
                passes its callee's errors on cancels), in units of the edge's error spread (at least err_floor)
       risk = saturate(max(latency part, error part)), with the same act-threshold-preserving curve as BaselineScorer.
@@ -132,10 +136,11 @@ class EdgeScorer:
     needs_snapshot = True
 
     def __init__(self, edges=None, full_ms=100.0, floor_ms=10.0, min_rate=1 / 60, err_floor=0.05,
-                 saturation="soft", anchor=0.85):
+                 saturation="soft", anchor=0.85, fanout=True, max_calls=10.0):
         if saturation not in ("clamp", "soft"):
             raise ValueError("saturation must be clamp or soft")
         self.edges = dict(edges or {})
+        self.fanout, self.max_calls = bool(fanout), float(max_calls)
         self.full_ms, self.floor_ms, self.min_rate, self.err_floor = float(full_ms), float(floor_ms), float(min_rate), float(err_floor)
         self.saturation, self.anchor = saturation, float(anchor)
 
@@ -199,6 +204,11 @@ class EdgeScorer:
         out_ms = {n: 0.0 for n in nodes}
         best_in_err = {n: (0.0, 0.0, self.err_floor) for n in nodes}
         out_err = {n: 0.0 for n in nodes}
+        in_rate = {n: 0.0 for n in nodes}
+        for e in snap.edges:
+            if e["destination"] in in_rate:
+                in_rate[e["destination"]] += self.rate(e)
+        fan_ms = {n: 0.0 for n in nodes}           # outgoing excess weighted by calls per incoming request
         for e in snap.edges:
             s, d = e["source"], e["destination"]
             if self.rate(e) < self.min_rate:
@@ -213,10 +223,13 @@ class EdgeScorer:
             if s in out_ms:
                 out_ms[s] = max(out_ms[s], ex_ms)
                 out_err[s] = max(out_err[s], ex_err)
+                if in_rate[s] > 0:
+                    fan_ms[s] += min(self.rate(e) / in_rate[s], self.max_calls) * ex_ms
         out = {}
         for n in nodes:
             _, in_ms, spread = best_in[n]
-            raw_lat = (in_ms - out_ms[n]) / spread
+            explained = max(out_ms[n], fan_ms[n]) if self.fanout else out_ms[n]
+            raw_lat = (in_ms - explained) / spread
             _, in_err, espread = best_in_err[n]
             raw_err = (in_err - out_err[n]) / espread
             out[n] = self._saturate(max(raw_lat, raw_err))

@@ -1,5 +1,5 @@
 # MeshHeal fleet API + dashboard. Build from the repository root:
-#   docker build -f deploy/Dockerfile.fleet -t meshheal-fleet:0.7.0 .
+#   docker build -f deploy/Dockerfile.fleet -t meshheal-fleet:0.7.1 .
 # Stage 1 builds the dashboard (Frontend_v3); stage 2 is a small Python image serving it and the API.
 FROM node:22-slim AS ui
 WORKDIR /repo/Frontend_v3

@@ -108,3 +108,26 @@ def test_learn_baseline_writes_edges_and_run_builds_the_edge_scorer(tmp_path):
     sn = snap(edge("lg", "frontend", 96), edge("frontend", "catalog", 160, rate=4.0))
     res = as_result(sc, node_stats(sn), sn)
     assert res.source == "primary" and max(res.scores, key=res.scores.get) == "catalog"
+
+
+def test_a_caller_that_calls_the_slow_service_several_times_per_request_cancels():
+    """The live canary test: frontend calls catalog about 4 times per page, so +300 ms on catalog adds about 1200 ms to a
+    page. Subtracting only the worst single edge (300 ms) left frontend far above catalog; the fan-out weighting cancels it."""
+    sn = snap(edge("lg", "frontend", 1400, rate=1.0), edge("frontend", "catalog", 305, rate=4.0),
+              edge("frontend", "shipping", 5, rate=0.15))
+    s = score(EdgeScorer(edges=BASE), sn)
+    assert max(s, key=s.get) == "catalog" and s["catalog"] > 0.85 and s["frontend"] < 0.85
+    old = score(EdgeScorer(edges=BASE, fanout=False), sn)
+    assert old["frontend"] > 0.85                                   # what went wrong live, kept as the ablation
+
+
+def test_fanout_does_not_hide_a_slow_caller_whose_callees_are_fine():
+    sn = snap(edge("lg", "frontend", 600, rate=1.0), edge("frontend", "catalog", 5, rate=4.0), edge("frontend", "shipping", 5, rate=0.15))
+    s = score(EdgeScorer(edges=BASE), sn)
+    assert max(s, key=s.get) == "frontend" and s["frontend"] > 0.85
+
+
+def test_calls_per_request_are_capped():
+    sn = snap(edge("lg", "frontend", 2000, rate=0.02), edge("frontend", "catalog", 20, rate=4.0))   # ratio 200 -> 10
+    sc = EdgeScorer(edges=BASE, max_calls=10)
+    assert score(sc, sn)["frontend"] > 0.85                          # 10 x 11 ms excess does not explain 1820 ms

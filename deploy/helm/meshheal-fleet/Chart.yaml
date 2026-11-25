@@ -2,5 +2,5 @@ apiVersion: v2
 name: meshheal-fleet
 description: MeshHeal fleet API and dashboard. Stores what each cluster's agent pushes (SQLite on a volume) and serves it behind tokens. Never writes to any cluster.
 type: application
-version: 0.7.0
-appVersion: "0.7.0"
+version: 0.7.1
+appVersion: "0.7.1"

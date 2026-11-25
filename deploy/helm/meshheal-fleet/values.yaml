@@ -1,6 +1,6 @@
 image:
   repository: meshheal-fleet
-  tag: "0.7.0"
+  tag: "0.7.1"
   pullPolicy: IfNotPresent
 
 # REQUIRED: an existing Secret holding tokens.json (hashes only), made with
