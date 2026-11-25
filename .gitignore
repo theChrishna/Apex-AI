@@ -44,3 +44,17 @@ live_run/*.log
 
 # TypeScript build info
 *.tsbuildinfo
+
+# Local run output and secrets (Phase 4-6): logs, port-forward output, discarded or superseded raw data, fleet tokens
+topo/*.log
+topo/*DISCARDED*
+topo/live_normal_*.jsonl
+live_run/
+*.db
+tokens.json
+fleet-secrets/
+topo/boutique_snapshots.jsonl
+NEXT_STEPS_RUN3.md
+topo/after_run3.log
+topo/canary_playbook.yaml
+topo/empty_playbook.yaml

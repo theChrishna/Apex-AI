@@ -4,10 +4,27 @@
 detect silent degradation / cascading failures in microservices early, then reroute traffic.
 
 ## Environment
-- macOS, k3d cluster `meshheal` (1 server + 2 agents) on Docker Desktop, 16 GB RAM (memory pressure causes flaky errors).
-- Istio demo profile + Prometheus addon. Bookinfo in namespace `aws-us-east` (gcp-asia / azure-eu are empty simulated regions).
-- Python venv `.venv` in this folder. After a Docker restart: `k3d cluster stop meshheal && k3d cluster start meshheal`.
-- Prometheus and Bookinfo need port-forwards (productpage on localhost:9080). If curl or telemetry fails, restart them.
+- Originally macOS; since 2026-11-24 also run on Windows 11: k3d cluster `meshheal` (1 server + 2 agents) on Docker Desktop,
+  **k3s v1.33.5** (`--image rancher/k3s:v1.33.5-k3s1`; v1.35 refuses to start on this machine's cgroup v1), Istio 1.32.0 demo
+  profile + Prometheus addon. kubectl points at `https://127.0.0.1:57008` (host.docker.internal is unreachable here).
+- Namespaces: `aws-us-east` (Bookinfo), `boutique` (Online Boutique v0.10.7, load generator USERS=3; USERS=10 saturates the
+  200m frontend), `meshheal-system` (releases `meshheal` -> aws-us-east, `meshheal-boutique` -> boutique, both shadow mode,
+  and `meshheal-fleet`). gcp-asia / azure-eu are empty simulated regions.
+- Python venv `.venv` in this folder (`scripts/setup.ps1` / `setup.sh`). Docker Desktop on this PC leaves a stale
+  `%LOCALAPPDATA%\Docker\run\userAnalyticsOtlpHttp.sock` that crashes the next start; delete it from WSL
+  (`wsl -d Ubuntu -- rm /mnt/c/Users/<you>/AppData/Local/Docker/run/userAnalyticsOtlpHttp.sock`).
+- After a Docker Desktop crash the k3d containers can come back with different IPs; a k3s node whose Node object still has
+  the old InternalIP crash-loops ("failed to find interface with specified node ip"). Seen 2026-11-25 on agent-1, which
+  was then stopped; the cluster ran on server + agent-0. The clean fix (deleting that Node object so it re-registers)
+  is a cluster write and needs the user's approval.
+- Prometheus (9090), productpage (9080) and the fleet API (8780) need port-forwards. Fleet tokens live OUTSIDE the repo
+  (`C:\Apex AI\fleet-secrets`); never commit tokens.
+
+## Phases after the course submission (see the REPORT_PHASE*.md files and docs/OPERATIONS.md)
+1 reproducible setup + CI; 2 generic discovery, YAML playbooks, safe patching; 3 topology-agnostic graphs, simulator,
+leave-one-topology-out evaluation (GNN not adopted); 4 learned baselines (per service, per edge), persistence replay,
+more fault types; 5 shadow by default, persisted reroute state, restart recovery, image + Helm chart; 6 fleet API
+(SQLite, tokens, per-cluster agents) and the Fleet dashboard page, canary rollback, alert rules.
 
 ## Bookinfo facts that matter
 - productpage -> details, productpage -> reviews, reviews -> ratings.
@@ -35,7 +52,7 @@ Loop every 15 s: read newest snapshot (reject stale > 45 s / NaN / missing nodes
 - **Live closed-loop runs (2026-10-29, `live_demo/run_live.py`, ratings 150 ms fault, one run per scenario, no rates or averages):** A (GNN scores, `result_A_20261029T053627Z.json`): REROUTE of ratings 78.2 s after the fault, median latency 0.172 s faulted to 0.023 s, back to baseline within about 2 s of the reroute, probe 70/15/15, RELEASE 174 s after the fault was removed, 21 SCORED all primary. B (kill file, rule fallback scores, `result_B_20261029T064550Z.json`): REROUTE 63.7 s, 0.182 s to 0.024 s, RELEASE 174.9 s after fault removal, 19 SCORED all fallback. `live_demo/test_patch.py --yes` passed on 2026-10-28.
 - Wording: detection is "about 60 to 80 s, set by the persistence rule". Do NOT say the fallback is faster than the GNN (A acted on the 4th high-risk cycle, B on the 3rd; the 14 s gap is unexplained). Do NOT quote 0.3 s / 1.8 s as recovery times (the script records the first of three consecutive fast samples 2 s apart). RELEASE shows the release logic works; the fault was removed before the probe started in both runs, so it does not show the probe catches a persisting fault.
 - v3 data check (`REPORT_V3.md`): 215 snapshots excluded; baseline and culprit rule unchanged; GNN AP 0.928 to 0.898, MLP 0.983 to 0.955, about the size of seed noise; holdout FPR fell (baseline 0.140 to 0.039, GNN 0.128 to 0.031); v3 policy numbers are not comparable (split problem).
-- Run: `python -m pytest -q` (117 tests in `meshheal_controlplane/`, 62 more in `topo/tests`, no cluster) | `python -m controlplane.run --snapshots snapshots.jsonl --replay` | shadow mode is the DEFAULT since Phase 5 (reads the cluster, never writes; `--dry-run` means the same) | `--act` = acting. See `docs/OPERATIONS.md`.
+- Run: `python -m pytest -q` (238 Python tests across `meshheal_controlplane/`, `topo/tests` and `dashboard/tests`, no cluster; `npm test` in Frontend_v3) | `python -m controlplane.run --snapshots snapshots.jsonl --replay` | shadow mode is the DEFAULT since Phase 5 (reads the cluster, never writes; `--dry-run` means the same) | `--act` = acting. See `docs/OPERATIONS.md`.
 
 ## Rules for working here
 - NEVER run kubectl write commands (apply/patch/delete) without the user's approval; always propose them first.

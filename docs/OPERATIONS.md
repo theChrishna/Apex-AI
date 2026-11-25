@@ -13,11 +13,11 @@ Both happen in the same API call, so the recorded state and the weights cannot d
 ## Install (shadow first)
 Build the image (not pushed anywhere) and install:
 ```
-docker build -f deploy/Dockerfile -t meshheal-controlplane:0.6.0 .
+docker build -f deploy/Dockerfile -t meshheal-controlplane:0.7.0 .
 helm install meshheal deploy/helm/meshheal -n meshheal-system --create-namespace --set targetNamespace=<app-namespace>
 kubectl logs -n meshheal-system deploy/meshheal-controlplane -c controller -f
 ```
-With a local k3d cluster, import the image first: `k3d image import meshheal-controlplane:0.6.0 -c <cluster>`.
+With a local k3d cluster, import the image first: `k3d image import meshheal-controlplane:0.7.0 -c <cluster>`.
 `targetNamespace` is required. Prometheus must reach Istio's metrics (default `http://prometheus.istio-system.svc:9090`).
 
 ## Give it a playbook, then read it
@@ -66,12 +66,55 @@ While paused the controller keeps scoring and logging but writes nothing, **incl
 
 ## Limits you must know
 - One replica and no leader election: the Deployment uses `Recreate`. Do not scale it up.
-- The container ships the **rule scorer only**. The trained GNN needs torch and is not in the image. On the real Online Boutique test the plain per-node MLP beat the GNN and your hand-set rule false-alarmed on 95% of normal snapshots (`topo/results/phase3_boutique_run1.md`), so do not treat the default scorer as production-grade; run in shadow mode and measure.
-- Only delay faults have been tested. A reroute needs a service with versions to switch between; applications without versions can be detected and ranked but not remediated.
+- The container ships the rule, learned-baseline and per-edge scorers (`scorer: rule|baseline|edge`; baseline and edge need a learned baseline file and fall back to the rule on error). The trained GNN needs torch and is not in the image. On the real Online Boutique test the plain per-node MLP beat the GNN and your hand-set rule false-alarmed on 95% of normal snapshots (`topo/results/phase3_boutique_run1.md`), so do not treat the default scorer as production-grade; run in shadow mode and measure.
+- Detection was evaluated on injected delay faults (Bookinfo, Online Boutique) and, in run3, on aborts, CPU starvation and pod crashes on Online Boutique (`topo/results/phase4_fresh_run3.md`). Reroutes were tested live for delay faults only. A reroute needs a service with versions to switch between; applications without versions can be detected and ranked but not remediated.
 - The live closed loop has been demonstrated on Bookinfo only. The snapshot file and audit log live on a scratch volume and are lost when the pod is replaced (the reroute state is not: it is in the cluster).
 
 ## Metrics
 `meshheal_loops_total`, `meshheal_loop_errors_total`, `meshheal_last_loop_timestamp_seconds`, `meshheal_active_reroutes`, `meshheal_paused`, `meshheal_shadow_mode`, `meshheal_events_total{event=...}` on the metrics port (default 9102).
+
+## Canary rollback (a service with two versions)
+The usual remedy reroutes the CALLER of a failing service to a version that does not call it (Bookinfo: `reviews` v1 skips
+`ratings`). For a service that runs a stable and a new version, the remedy is to move its OWN traffic back to the stable
+one. A playbook entry whose `virtual_service` is the culprit itself means exactly that:
+```yaml
+reroutes:
+  - {culprit: cartservice, virtual_service: cartservice, target_subset: v1,
+     normal_weights: {v1: 50, v2: 50}, reason: roll back to the stable version, confirmed: true}
+```
+The controller only does it with per-version evidence from the snapshot (collector 0.7+ writes `subsets` for services with
+two or more versions): the target version must have traffic and be clearly better than another version (p95 under half and at
+least `rollback_margin_ms` (50) lower, or at least 10 points fewer failures). Otherwise it logs `ACTION_BLOCKED` with
+`no_subset_evidence`, `target_subset_no_traffic` or `target_subset_not_better`: rolling back cannot help when every version
+is slow.
+
+Live test on Online Boutique (`REPORT_PHASE6.md`): the per-version evidence was collected correctly, but the per-edge
+scorer blamed the caller (frontend, which calls the bad service several times per page) instead of the bad service, so
+no rollback happened. A live canary rollback has not been demonstrated yet.
+
+## Fleet dashboard (several clusters in one place)
+One `meshheal-fleet` API stores what each cluster's agent pushes (snapshots and decisions; SQLite on a volume, 14 days) and
+serves the dashboard (Fleet page). It never talks to the Kubernetes API.
+```
+python -m dashboard.tokens --file tokens.json add-read --label you          # prints a read token once; only hashes are stored
+python -m dashboard.tokens --file tokens.json add-ingest <cluster>          # one per cluster; may only push for that cluster
+kubectl create secret generic meshheal-fleet-tokens --from-file=tokens.json -n meshheal-system
+helm install meshheal-fleet deploy/helm/meshheal-fleet -n meshheal-system --set tokensSecret=meshheal-fleet-tokens \
+     --set-file baselines.<cluster>=baseline.yaml
+kubectl create secret generic meshheal-fleet-ingest-<cluster> --from-literal=token=<ingest token> -n meshheal-system
+helm upgrade meshheal deploy/helm/meshheal -n meshheal-system --reuse-values \
+     --set fleet.url=http://meshheal-fleet.meshheal-system.svc:8780 --set fleet.tokenSecret=meshheal-fleet-ingest-<cluster>
+kubectl port-forward -n meshheal-system svc/meshheal-fleet 8780:8780      # then open http://127.0.0.1:8780/#/fleet
+```
+Keep token files out of the repository. The API has no TLS of its own: put it behind your ingress or a TLS proxy before
+exposing it beyond the cluster. A controller in another cluster pushes the same way, as long as it can reach the URL.
+
+## Alerts
+The chart ships Prometheus alert rules for the controller itself (`alerts.enabled`, on by default): controller down, loop
+stalled, loop errors, refused writes, four or more reroutes in an hour, a reroute in place for 45 minutes, paused for 30
+minutes, unreadable reroute state, most snapshots rejected. With the Prometheus Operator they become a `PrometheusRule`;
+otherwise a ConfigMap `<release>-controlplane-alerts` holds `meshheal-rules.yaml` for your Prometheus `rule_files`. Every
+expression was checked against a live Prometheus scraping the controller.
 
 ## Uninstall
 `helm uninstall meshheal -n meshheal-system`. If a reroute was active, release it first (or pause, then restore the weights yourself): uninstalling does not touch VirtualServices. The annotation `meshheal.io/state` can be removed with `kubectl annotate virtualservice <name> meshheal.io/state- -n <app-namespace>`.
