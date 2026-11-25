@@ -1,0 +1,1426 @@
+{
+ "persistence": {
+  "rule": {
+   "normal_hours": 0.69,
+   "normal_alarm_onsets": 18,
+   "false_alarms_per_hour": 26.19,
+   "episodes": 32,
+   "caught": 7,
+   "wrong_first": 29,
+   "median_delay_s": 82.8,
+   "rows": [
+    {
+     "episode": "1",
+     "node": "cartservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "2",
+     "node": "recommendationservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 198.7,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "3",
+     "node": "currencyservice",
+     "delay_ms": 100,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "checkoutservice",
+     "wrong_first": true
+    },
+    {
+     "episode": "4",
+     "node": "emailservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "5",
+     "node": "currencyservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "6",
+     "node": "checkoutservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "7",
+     "node": "productcatalogservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "8",
+     "node": "frontend",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 42.5,
+     "first_alarm": "frontend",
+     "wrong_first": false
+    },
+    {
+     "episode": "9",
+     "node": "checkoutservice",
+     "delay_ms": 50,
+     "caught": true,
+     "delay_s": 75.8,
+     "first_alarm": "checkoutservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "10",
+     "node": "checkoutservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "11",
+     "node": "shippingservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "checkoutservice",
+     "wrong_first": true
+    },
+    {
+     "episode": "12",
+     "node": "adservice",
+     "delay_ms": 100,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "13",
+     "node": "productcatalogservice",
+     "delay_ms": 150,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "14",
+     "node": "currencyservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "15",
+     "node": "shippingservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "16",
+     "node": "emailservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "17",
+     "node": "frontend",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 82.8,
+     "first_alarm": "checkoutservice",
+     "wrong_first": true
+    },
+    {
+     "episode": "18",
+     "node": "productcatalogservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "19",
+     "node": "paymentservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "20",
+     "node": "paymentservice",
+     "delay_ms": 50,
+     "caught": true,
+     "delay_s": 124.2,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "21",
+     "node": "emailservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "22",
+     "node": "recommendationservice",
+     "delay_ms": 50,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "23",
+     "node": "cartservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 74.4,
+     "first_alarm": "cartservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "24",
+     "node": "paymentservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "25",
+     "node": "shippingservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "26",
+     "node": "currencyservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "27",
+     "node": "adservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "28",
+     "node": "adservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "29",
+     "node": "recommendationservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "checkoutservice",
+     "wrong_first": true
+    },
+    {
+     "episode": "30",
+     "node": "emailservice",
+     "delay_ms": 50,
+     "caught": true,
+     "delay_s": 89.5,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "31",
+     "node": "productcatalogservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "checkoutservice",
+     "wrong_first": true
+    },
+    {
+     "episode": "32",
+     "node": "shippingservice",
+     "delay_ms": 100,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    }
+   ]
+  },
+  "baseline": {
+   "normal_hours": 0.69,
+   "normal_alarm_onsets": 0,
+   "false_alarms_per_hour": 0.0,
+   "episodes": 32,
+   "caught": 9,
+   "wrong_first": 5,
+   "median_delay_s": 82.8,
+   "rows": [
+    {
+     "episode": "1",
+     "node": "cartservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "2",
+     "node": "recommendationservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 198.7,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "3",
+     "node": "currencyservice",
+     "delay_ms": 100,
+     "caught": true,
+     "delay_s": 65.8,
+     "first_alarm": "currencyservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "4",
+     "node": "emailservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "5",
+     "node": "currencyservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "6",
+     "node": "checkoutservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "7",
+     "node": "productcatalogservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "8",
+     "node": "frontend",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "9",
+     "node": "checkoutservice",
+     "delay_ms": 50,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "10",
+     "node": "checkoutservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "11",
+     "node": "shippingservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 52.4,
+     "first_alarm": "shippingservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "12",
+     "node": "adservice",
+     "delay_ms": 100,
+     "caught": true,
+     "delay_s": 86.1,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "13",
+     "node": "productcatalogservice",
+     "delay_ms": 150,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "14",
+     "node": "currencyservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "15",
+     "node": "shippingservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "16",
+     "node": "emailservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "17",
+     "node": "frontend",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 82.8,
+     "first_alarm": "frontend",
+     "wrong_first": false
+    },
+    {
+     "episode": "18",
+     "node": "productcatalogservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "19",
+     "node": "paymentservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "20",
+     "node": "paymentservice",
+     "delay_ms": 50,
+     "caught": true,
+     "delay_s": 78.8,
+     "first_alarm": "paymentservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "21",
+     "node": "emailservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "22",
+     "node": "recommendationservice",
+     "delay_ms": 50,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "23",
+     "node": "cartservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 74.4,
+     "first_alarm": "cartservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "24",
+     "node": "paymentservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "25",
+     "node": "shippingservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "26",
+     "node": "currencyservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "27",
+     "node": "adservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 159.7,
+     "first_alarm": "adservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "28",
+     "node": "adservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 264.0,
+     "first_alarm": "adservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "29",
+     "node": "recommendationservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "30",
+     "node": "emailservice",
+     "delay_ms": 50,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "31",
+     "node": "productcatalogservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "32",
+     "node": "shippingservice",
+     "delay_ms": 100,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    }
+   ]
+  },
+  "edge": {
+   "normal_hours": 0.69,
+   "normal_alarm_onsets": 0,
+   "false_alarms_per_hour": 0.0,
+   "episodes": 32,
+   "caught": 28,
+   "wrong_first": 9,
+   "median_delay_s": 76.25,
+   "rows": [
+    {
+     "episode": "1",
+     "node": "cartservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 59.4,
+     "first_alarm": "cartservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "2",
+     "node": "recommendationservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 62.5,
+     "first_alarm": "recommendationservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "3",
+     "node": "currencyservice",
+     "delay_ms": 100,
+     "caught": true,
+     "delay_s": 65.8,
+     "first_alarm": "currencyservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "4",
+     "node": "emailservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 129.9,
+     "first_alarm": "emailservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "5",
+     "node": "currencyservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 57.6,
+     "first_alarm": "currencyservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "6",
+     "node": "checkoutservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 61.0,
+     "first_alarm": "checkoutservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "7",
+     "node": "productcatalogservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 89.8,
+     "first_alarm": "checkoutservice",
+     "wrong_first": true
+    },
+    {
+     "episode": "8",
+     "node": "frontend",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 57.7,
+     "first_alarm": "frontend",
+     "wrong_first": false
+    },
+    {
+     "episode": "9",
+     "node": "checkoutservice",
+     "delay_ms": 50,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "10",
+     "node": "checkoutservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 215.3,
+     "first_alarm": "checkoutservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "11",
+     "node": "shippingservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 52.4,
+     "first_alarm": "shippingservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "12",
+     "node": "adservice",
+     "delay_ms": 100,
+     "caught": true,
+     "delay_s": 86.1,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "13",
+     "node": "productcatalogservice",
+     "delay_ms": 150,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "14",
+     "node": "currencyservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 77.5,
+     "first_alarm": "currencyservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "15",
+     "node": "shippingservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "currencyservice",
+     "wrong_first": true
+    },
+    {
+     "episode": "16",
+     "node": "emailservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 74.7,
+     "first_alarm": "emailservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "17",
+     "node": "frontend",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 82.8,
+     "first_alarm": "checkoutservice",
+     "wrong_first": true
+    },
+    {
+     "episode": "18",
+     "node": "productcatalogservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 252.7,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "19",
+     "node": "paymentservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 75.0,
+     "first_alarm": "paymentservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "20",
+     "node": "paymentservice",
+     "delay_ms": 50,
+     "caught": true,
+     "delay_s": 78.8,
+     "first_alarm": "paymentservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "21",
+     "node": "emailservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "22",
+     "node": "recommendationservice",
+     "delay_ms": 50,
+     "caught": true,
+     "delay_s": 55.6,
+     "first_alarm": "recommendationservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "23",
+     "node": "cartservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 59.2,
+     "first_alarm": "cartservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "24",
+     "node": "paymentservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 63.1,
+     "first_alarm": "paymentservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "25",
+     "node": "shippingservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 137.5,
+     "first_alarm": "checkoutservice",
+     "wrong_first": true
+    },
+    {
+     "episode": "26",
+     "node": "currencyservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 95.6,
+     "first_alarm": "checkoutservice",
+     "wrong_first": true
+    },
+    {
+     "episode": "27",
+     "node": "adservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 159.7,
+     "first_alarm": "adservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "28",
+     "node": "adservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 82.2,
+     "first_alarm": "adservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "29",
+     "node": "recommendationservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 70.6,
+     "first_alarm": "recommendationservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "30",
+     "node": "emailservice",
+     "delay_ms": 50,
+     "caught": true,
+     "delay_s": 89.5,
+     "first_alarm": "emailservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "31",
+     "node": "productcatalogservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 138.3,
+     "first_alarm": "checkoutservice",
+     "wrong_first": true
+    },
+    {
+     "episode": "32",
+     "node": "shippingservice",
+     "delay_ms": 100,
+     "caught": true,
+     "delay_s": 65.9,
+     "first_alarm": "shippingservice",
+     "wrong_first": false
+    }
+   ]
+  },
+  "mlp (5 seeds avg)": {
+   "normal_hours": 0.69,
+   "normal_alarm_onsets": 0,
+   "false_alarms_per_hour": 0.0,
+   "episodes": 32,
+   "caught": 6,
+   "wrong_first": 2,
+   "median_delay_s": 87.75,
+   "rows": [
+    {
+     "episode": "1",
+     "node": "cartservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "2",
+     "node": "recommendationservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 92.7,
+     "first_alarm": "recommendationservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "3",
+     "node": "currencyservice",
+     "delay_ms": 100,
+     "caught": true,
+     "delay_s": 171.9,
+     "first_alarm": "frontend",
+     "wrong_first": true
+    },
+    {
+     "episode": "4",
+     "node": "emailservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "5",
+     "node": "currencyservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "6",
+     "node": "checkoutservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 61.0,
+     "first_alarm": "checkoutservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "7",
+     "node": "productcatalogservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": "checkoutservice",
+     "wrong_first": true
+    },
+    {
+     "episode": "8",
+     "node": "frontend",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "9",
+     "node": "checkoutservice",
+     "delay_ms": 50,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "10",
+     "node": "checkoutservice",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 215.3,
+     "first_alarm": "checkoutservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "11",
+     "node": "shippingservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "12",
+     "node": "adservice",
+     "delay_ms": 100,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "13",
+     "node": "productcatalogservice",
+     "delay_ms": 150,
+     "caught": true,
+     "delay_s": 73.8,
+     "first_alarm": "productcatalogservice",
+     "wrong_first": false
+    },
+    {
+     "episode": "14",
+     "node": "currencyservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "15",
+     "node": "shippingservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "16",
+     "node": "emailservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "17",
+     "node": "frontend",
+     "delay_ms": 0,
+     "caught": true,
+     "delay_s": 82.8,
+     "first_alarm": "frontend",
+     "wrong_first": false
+    },
+    {
+     "episode": "18",
+     "node": "productcatalogservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "19",
+     "node": "paymentservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "20",
+     "node": "paymentservice",
+     "delay_ms": 50,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "21",
+     "node": "emailservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "22",
+     "node": "recommendationservice",
+     "delay_ms": 50,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "23",
+     "node": "cartservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "24",
+     "node": "paymentservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "25",
+     "node": "shippingservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "26",
+     "node": "currencyservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "27",
+     "node": "adservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "28",
+     "node": "adservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "29",
+     "node": "recommendationservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "30",
+     "node": "emailservice",
+     "delay_ms": 50,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "31",
+     "node": "productcatalogservice",
+     "delay_ms": 0,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    },
+    {
+     "episode": "32",
+     "node": "shippingservice",
+     "delay_ms": 100,
+     "caught": false,
+     "delay_s": null,
+     "first_alarm": null,
+     "wrong_first": false
+    }
+   ]
+  }
+ },
+ "by_type": {
+  "rule": {
+   "abort": {
+    "episodes": 8,
+    "caught": 1,
+    "wrong_first": 7,
+    "median_delay_s": 42.5
+   },
+   "cpu": {
+    "episodes": 8,
+    "caught": 1,
+    "wrong_first": 8,
+    "median_delay_s": 82.8
+   },
+   "crash": {
+    "episodes": 8,
+    "caught": 2,
+    "wrong_first": 7,
+    "median_delay_s": 136.55
+   },
+   "delay": {
+    "episodes": 8,
+    "caught": 3,
+    "wrong_first": 7,
+    "median_delay_s": 89.5
+   }
+  },
+  "baseline": {
+   "abort": {
+    "episodes": 8,
+    "caught": 1,
+    "wrong_first": 0,
+    "median_delay_s": 264.0
+   },
+   "cpu": {
+    "episodes": 8,
+    "caught": 2,
+    "wrong_first": 0,
+    "median_delay_s": 121.25
+   },
+   "crash": {
+    "episodes": 8,
+    "caught": 3,
+    "wrong_first": 1,
+    "median_delay_s": 74.4
+   },
+   "delay": {
+    "episodes": 8,
+    "caught": 3,
+    "wrong_first": 4,
+    "median_delay_s": 78.8
+   }
+  },
+  "edge": {
+   "abort": {
+    "episodes": 8,
+    "caught": 7,
+    "wrong_first": 3,
+    "median_delay_s": 82.2
+   },
+   "cpu": {
+    "episodes": 8,
+    "caught": 7,
+    "wrong_first": 3,
+    "median_delay_s": 77.5
+   },
+   "crash": {
+    "episodes": 8,
+    "caught": 8,
+    "wrong_first": 1,
+    "median_delay_s": 68.75
+   },
+   "delay": {
+    "episodes": 8,
+    "caught": 6,
+    "wrong_first": 2,
+    "median_delay_s": 72.35
+   }
+  },
+  "mlp (5 seeds avg)": {
+   "abort": {
+    "episodes": 8,
+    "caught": 0,
+    "wrong_first": 0,
+    "median_delay_s": null
+   },
+   "cpu": {
+    "episodes": 8,
+    "caught": 2,
+    "wrong_first": 1,
+    "median_delay_s": 71.9
+   },
+   "crash": {
+    "episodes": 8,
+    "caught": 2,
+    "wrong_first": 0,
+    "median_delay_s": 154.0
+   },
+   "delay": {
+    "episodes": 8,
+    "caught": 2,
+    "wrong_first": 1,
+    "median_delay_s": 122.85
+   }
+  }
+ },
+ "per_snapshot": {
+  "rule": {
+   "abort": {
+    "ap": 0.13658121256104835,
+    "rc1": 0.08860759493670886,
+    "n_steady": 79
+   },
+   "cpu": {
+    "ap": 0.13024856749100922,
+    "rc1": 0.16666666666666666,
+    "n_steady": 78
+   },
+   "crash": {
+    "ap": 0.16469890026967438,
+    "rc1": 0.0949367088607595,
+    "n_steady": 79
+   },
+   "delay": {
+    "ap": 0.3211273197324264,
+    "rc1": 0.26923076923076916,
+    "n_steady": 78
+   },
+   "all": {
+    "ap": 0.20105877755948004,
+    "rc1": 0.15445859872611464,
+    "n_steady": 314,
+    "fpr": 0.573170731707317,
+    "n_normal": 164
+   }
+  },
+  "baseline": {
+   "abort": {
+    "ap": 0.15340292618773632,
+    "rc1": 0.1495972382048332,
+    "n_steady": 79
+   },
+   "cpu": {
+    "ap": 0.23115386643161115,
+    "rc1": 0.2494172494172494,
+    "n_steady": 78
+   },
+   "crash": {
+    "ap": 0.3704395099152889,
+    "rc1": 0.46317606444188725,
+    "n_steady": 79
+   },
+   "delay": {
+    "ap": 0.319493006993007,
+    "rc1": 0.2698135198135198,
+    "n_steady": 78
+   },
+   "all": {
+    "ap": 0.23057091069717017,
+    "rc1": 0.28314997104806017,
+    "n_steady": 314,
+    "fpr": 0.0,
+    "n_normal": 164
+   }
+  },
+  "edge": {
+   "abort": {
+    "ap": 0.7087281311202313,
+    "rc1": 0.787686996547756,
+    "n_steady": 79
+   },
+   "cpu": {
+    "ap": 0.21930777255511666,
+    "rc1": 0.254079254079254,
+    "n_steady": 78
+   },
+   "crash": {
+    "ap": 0.5608321571492174,
+    "rc1": 0.6277330264672036,
+    "n_steady": 79
+   },
+   "delay": {
+    "ap": 0.6216801604803807,
+    "rc1": 0.6963869463869463,
+    "n_steady": 78
+   },
+   "all": {
+    "ap": 0.5115201013535609,
+    "rc1": 0.5922119281991893,
+    "n_steady": 314,
+    "fpr": 0.0,
+    "n_normal": 164
+   }
+  },
+  "mlp (5 seeds avg)": {
+   "abort": {
+    "ap": 0.1022049770654441,
+    "rc1": 0.10126582278481013,
+    "n_steady": 79
+   },
+   "cpu": {
+    "ap": 0.11397673144734477,
+    "rc1": 0.16666666666666666,
+    "n_steady": 78
+   },
+   "crash": {
+    "ap": 0.31403939421639854,
+    "rc1": 0.20253164556962025,
+    "n_steady": 79
+   },
+   "delay": {
+    "ap": 0.5096818508092357,
+    "rc1": 0.44871794871794873,
+    "n_steady": 78
+   },
+   "all": {
+    "ap": 0.27525453103550374,
+    "rc1": 0.22929936305732485,
+    "n_steady": 314,
+    "fpr": 0.0,
+    "n_normal": 164
+   }
+  }
+ },
+ "learn_snapshots": 108,
+ "normal_snapshots": 164
+}

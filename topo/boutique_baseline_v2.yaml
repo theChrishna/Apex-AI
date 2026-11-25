@@ -1,0 +1,201 @@
+# Learned by controlplane.learn_baseline on 2026-11-25T03:08:44.826641Z
+# Source: topo/boutique_normal_learn.jsonl (fault log: none)  records=70  services=10
+# services: median and q0.99 (ms) of a service's rate-weighted incoming / outgoing latency (--scorer baseline)
+# edges:    median and q0.99 of each edge's latency p95 (ms) and error fraction (--scorer edge)
+# All from NORMAL traffic. A service or edge not listed falls back to the hand-set scale.
+method: envelope-q0.99
+floor_ms: 10.0
+min_rate: 0.05
+err_floor: 0.05
+edge_min_rate: 0.016667
+services:
+  adservice:
+    in_lat:
+      median: 4.791485507246376
+      high: 7.068750000000001
+    in_rate_median: 0.4666977798519902
+    samples: 70
+  cartservice:
+    in_lat:
+      median: 8.307946399478656
+      high: 9.499540322580643
+    in_rate_median: 0.800053336889126
+    samples: 70
+  checkoutservice:
+    in_lat:
+      median: 48.75
+      high: 97.5
+    out_lat:
+      median: 4.763637465634198
+      high: 6.26530180516434
+    in_rate_median: 0.044446419840881816
+    samples: 55
+  currencyservice:
+    in_lat:
+      median: 4.8293180383379255
+      high: 5.7070106379310275
+    in_rate_median: 2.444634336039625
+    samples: 70
+  emailservice:
+    in_lat:
+      median: 4.8
+      high: 9.75
+    in_rate_median: 0.044446419840881816
+    samples: 54
+  frontend:
+    in_lat:
+      median: 95.62777777777777
+      high: 153.87499999999986
+    out_lat:
+      median: 6.393545048533144
+      high: 7.647634154083937
+    in_rate_median: 0.8222953151391235
+    samples: 70
+  paymentservice:
+    in_lat:
+      median: 4.8
+      high: 23.095
+    in_rate_median: 0.044447407604951444
+    samples: 55
+  productcatalogservice:
+    in_lat:
+      median: 4.759960484840793
+      high: 4.9229022651113095
+    in_rate_median: 4.567174130458939
+    samples: 70
+  recommendationservice:
+    in_lat:
+      median: 19.96875
+      high: 22.969749999999998
+    out_lat:
+      median: 4.786666666666667
+      high: 6.176250000000001
+    in_rate_median: 0.6000466709634009
+    samples: 70
+  shippingservice:
+    in_lat:
+      median: 4.7333333333333325
+      high: 4.8
+    in_rate_median: 0.24445530912485
+    samples: 70
+edges:
+  checkoutservice>cartservice:
+    lat:
+      median: 4.8
+      high: 9.557500000000001
+    err:
+      median: 0.0
+      high: 0.0
+    samples: 55
+  checkoutservice>currencyservice:
+    lat:
+      median: 4.8
+      high: 4.800000000000001
+    err:
+      median: 0.0
+      high: 0.0
+    samples: 54
+  checkoutservice>emailservice:
+    lat:
+      median: 4.8
+      high: 9.75
+    err:
+      median: 0.0
+      high: 0.0
+    samples: 54
+  checkoutservice>paymentservice:
+    lat:
+      median: 4.8
+      high: 23.095
+    err:
+      median: 0.0
+      high: 0.0
+    samples: 55
+  checkoutservice>productcatalogservice:
+    lat:
+      median: 4.8
+      high: 4.800000000000001
+    err:
+      median: 0.0
+      high: 0.0
+    samples: 55
+  checkoutservice>shippingservice:
+    lat:
+      median: 4.6
+      high: 4.800000000000001
+    err:
+      median: 0.0
+      high: 0.0
+    samples: 55
+  frontend>adservice:
+    lat:
+      median: 4.791485507246376
+      high: 7.068750000000001
+    err:
+      median: 0.0
+      high: 0.0
+    samples: 70
+  frontend>cartservice:
+    lat:
+      median: 8.499999999999998
+      high: 9.654062499999998
+    err:
+      median: 0.0
+      high: 0.0
+    samples: 70
+  frontend>checkoutservice:
+    lat:
+      median: 48.75
+      high: 97.5
+    err:
+      median: 0.0
+      high: 0.0
+    samples: 55
+  frontend>currencyservice:
+    lat:
+      median: 4.82980437992126
+      high: 5.771249999999992
+    err:
+      median: 0.0
+      high: 0.0
+    samples: 70
+  frontend>productcatalogservice:
+    lat:
+      median: 4.753150090839828
+      high: 4.855882731003114
+    err:
+      median: 0.0
+      high: 0.0
+    samples: 70
+  frontend>recommendationservice:
+    lat:
+      median: 19.96875
+      high: 22.969749999999998
+    err:
+      median: 0.0
+      high: 0.0
+    samples: 70
+  frontend>shippingservice:
+    lat:
+      median: 4.771428571428571
+      high: 4.800000000000001
+    err:
+      median: 0.0
+      high: 0.0
+    samples: 70
+  loadgenerator>frontend:
+    lat:
+      median: 95.62777777777777
+      high: 153.87499999999986
+    err:
+      median: 0.0
+      high: 0.0
+    samples: 70
+  recommendationservice>productcatalogservice:
+    lat:
+      median: 4.786666666666667
+      high: 6.176250000000001
+    err:
+      median: 0.0
+      high: 0.0
+    samples: 70

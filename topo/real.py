@@ -30,7 +30,8 @@ def load_episodes(fault_log):
     eps = []
     for row in load_jsonl(fault_log):
         if row.get("completed", False):
-            eps.append({"id": str(row["episode"]), "node": row["node"], "delay_ms": row["delay_ms"],
+            eps.append({"id": str(row["episode"]), "node": row["node"], "delay_ms": row.get("delay_ms", 0),
+                        "type": row.get("type", "delay"), "param": row.get("param", row.get("delay_ms")),
                         "start": _ts(row["start"]), "end": _ts(row["end"])})
     return sorted(eps, key=lambda e: e["start"])
 

@@ -55,11 +55,12 @@ def main(argv=None):
         r["topology"], r["family"] = "bookinfo-real", "real"
 
     base, notes = lb.build_baseline(lb.collect_normal_stats(learn), q=a.quantile)
+    edges, _ = lb.build_edges(lb.collect_normal_edges(learn), q=a.quantile)
     import yaml
     with tempfile.TemporaryDirectory() as t:
         path = os.path.join(t, "bookinfo_baseline.yaml")
         with open(path, "w", encoding="utf-8") as f:
-            yaml.safe_dump({"method": f"envelope-q{a.quantile}", "floor_ms": a.floor_ms, "min_rate": 0.05, "services": base}, f)
+            yaml.safe_dump({"method": f"envelope-q{a.quantile}", "floor_ms": a.floor_ms, "min_rate": 0.05, "services": base, "edges": edges}, f)
         graphs = ev.build_graphs(test, path)
 
     n_st = sum(1 for g in graphs if g.phase == "steady")
@@ -70,7 +71,7 @@ def main(argv=None):
              (f"REPORT_V3's noisy windows (excluded_windows_v3.json, fixed on 2026-10-27) are EXCLUDED: {len(excluded)} snapshots."
               if a.exclude_v3 else "REPORT_V3's noisy windows are INCLUDED (the holdout contains window B1, labelled normal but elevated)."), "",
              "| scorer | AP | RC@1 | FPR@0.85 |", "|---|---|---|---|"]
-    for name in ("baseline", "baseline_clamp", "rule", "p95"):
+    for name in ("edge", "baseline", "baseline_clamp", "rule", "p95"):
         m = ev.evaluate(graphs, ev.baseline_scores(name, graphs), risk_scale=(name in ev.RISK_SCALED))
         fpr = "n/a" if m["fpr"] != m["fpr"] else f"{m['fpr']:.3f}"
         lines.append(f"| {name} | {m['ap']:.3f} | {m['rc1']:.3f} | {fpr} |")

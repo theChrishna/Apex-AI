@@ -32,7 +32,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "meshheal_controlplane"))
 
-from controlplane.scorer import BaselineScorer, RuleScorer  # noqa: E402
+from controlplane.scorer import BaselineScorer, EdgeScorer, RuleScorer  # noqa: E402
 from controlplane.snapshot import Snapshot, node_stats, parse_ts  # noqa: E402
 from model import RiskGNN  # noqa: E402
 from topo import sim  # noqa: E402
@@ -59,8 +59,8 @@ MODELS = {                       # name -> (class, number of features it sees)
     "mlp": (NodeMLP, 6),
     "gnn_degree": (RiskGNN, 8),  # + log1p in/out degree, to test whether structure features help
 }
-BASELINES = ["rule", "p95", "baseline", "baseline_clamp"]
-RISK_SCALED = ("rule", "baseline", "baseline_clamp")    # these output a 0..1 risk, so the 0.85 false-alarm rate applies
+BASELINES = ["rule", "p95", "baseline", "baseline_clamp", "edge"]
+RISK_SCALED = ("rule", "baseline", "baseline_clamp", "edge")    # these output a 0..1 risk, so the 0.85 false-alarm rate applies
 
 
 # ------------------------------------------------------------------------------------------------ graphs
@@ -73,6 +73,12 @@ def build_graphs(records, baseline_path=None):
     rule = RuleScorer(100.0)
     baseline = BaselineScorer.from_file(baseline_path) if baseline_path else BaselineScorer()
     clamp = BaselineScorer.from_file(baseline_path, saturation="clamp") if baseline_path else BaselineScorer(saturation="clamp")
+    edge = EdgeScorer()                                          # no learned edges: per-edge hand-set scale
+    if baseline_path:
+        try:
+            edge = EdgeScorer.from_file(baseline_path)
+        except ValueError:
+            pass                                                 # an older baseline file without edges
     for r in records:
         g = record_to_graph(r, degree=True)
         snap = Snapshot(ts=parse_ts(r["timestamp"]), nodes=r["nodes"], edges=r["edges"])
@@ -80,9 +86,11 @@ def build_graphs(records, baseline_path=None):
         sc_rule = rule.score(st)
         sc_base = baseline.score(st)
         sc_clamp = clamp.score(st)
+        sc_edge = edge.score(st, snap)
         g.rule = torch.tensor([sc_rule.get(n, 0.0) for n in g.node_ids], dtype=torch.float)
         g.baseline = torch.tensor([sc_base.get(n, 0.0) for n in g.node_ids], dtype=torch.float)
         g.baseline_clamp = torch.tensor([sc_clamp.get(n, 0.0) for n in g.node_ids], dtype=torch.float)
+        g.edge = torch.tensor([sc_edge.get(n, 0.0) for n in g.node_ids], dtype=torch.float)
         graphs.append(g)
     return graphs
 
@@ -164,6 +172,8 @@ def baseline_scores(name, graphs):
         return [g.baseline.numpy() for g in graphs]
     if name == "baseline_clamp":
         return [g.baseline_clamp.numpy() for g in graphs]
+    if name == "edge":
+        return [g.edge.numpy() for g in graphs]
     return [g.x[:, IN_LAT_IDX].numpy() for g in graphs]       # p95: log1p(incoming latency)
 
 
@@ -278,7 +288,7 @@ def write_outputs(rows, summary, ok, lines, meta, out_prefix):
           "`boutique*` is real Online Boutique data (load-generated traffic with faults WE injected) that the simulator was NOT calibrated on.", ""]
     for proto, s in summary.items():
         md += [f"## {proto}", f"Folds: {'; '.join(s['_folds'])}", "", "| model | AP | RC@1 | FPR@0.85 |", "|---|---|---|---|"]
-        for model in ("gnn", "gnn_degree", "mlp", "baseline", "baseline_clamp", "rule", "p95"):
+        for model in ("gnn", "gnn_degree", "mlp", "edge", "baseline", "baseline_clamp", "rule", "p95"):
             if model in s:
                 md.append(f"| {model} | {fmt(s[model]['ap'])} | {fmt(s[model]['rc1'])} | {fmt(s[model]['fpr'])} |")
         md.append("")

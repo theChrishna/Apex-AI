@@ -45,8 +45,8 @@ def test_fault_virtualservice_is_a_100_percent_delay_on_the_service_and_named_as
 def test_schedule_covers_every_target_before_repeating_and_is_reproducible():
     t = ["a", "b", "c"]
     s = rb.schedule(t, 7, seed=3)
-    assert len(s) == 7 and sorted(x for x, _ in s[:3]) == t and sorted(x for x, _ in s[3:6]) == t
-    assert all(d in rb.DELAYS_MS for _, d in s) and s == rb.schedule(t, 7, seed=3)
+    assert len(s) == 7 and sorted(x for x, _, _ in s[:3]) == t and sorted(x for x, _, _ in s[3:6]) == t
+    assert all(ft == "delay" and d in rb.DELAYS_MS for _, ft, d in s) and s == rb.schedule(t, 7, seed=3)
 
 
 def test_without_yes_nothing_is_run(monkeypatch, capsys):
@@ -98,3 +98,74 @@ def test_boutique_graphs_keep_a_faulted_service_that_had_no_traffic_in_that_wind
     steady = [g for g in graphs if g.phase == "steady"]
     assert len(steady) == 2 and all(g.node_ids.index(g.fault_node) >= 0 and g.y.sum() == 1 for g in steady)
     assert ev.evaluate(steady, [g.rule.numpy() for g in steady])["rc1"] >= 0.0             # no crash looking up the faulted node
+
+
+def test_abort_fault_is_grpc_unavailable_for_grpc_services_and_503_for_the_http_frontend():
+    g, h = rb.abort_yaml("cartservice"), rb.abort_yaml("frontend")
+    assert 'grpcStatus: "UNAVAILABLE"' in g and "value: 50.0" in g and "name: cartservice-fault-inj" in g
+    assert "httpStatus: 503" in h and "grpcStatus" not in h
+
+
+def test_mixed_schedule_covers_every_service_and_type_once_per_block():
+    plan = rb.schedule(["a", "b"], 8, seed=4, types=("delay", "abort", "cpu", "crash"))
+    assert sorted((s, t) for s, t, _ in plan) == sorted((s, t) for s in "ab" for t in rb.TYPES)
+    assert all(p in rb.DELAYS_MS for _, t, p in plan if t == "delay")
+    assert plan == rb.schedule(["a", "b"], 8, seed=4, types=("delay", "abort", "cpu", "crash"))
+
+
+class _R:
+    returncode, stderr = 0, ""
+
+    def __init__(self, stdout=""):
+        self.stdout = stdout
+
+
+def test_cpu_fault_starves_the_container_and_always_restores_its_resources(monkeypatch):
+    original = {"limits": {"cpu": "200m", "memory": "128Mi"}, "requests": {"cpu": "100m", "memory": "64Mi"}}
+    dep = {"spec": {"template": {"spec": {"containers": [{"name": "server", "resources": original}]}}}}
+    calls = []
+
+    def fake(*args, stdin=None):
+        calls.append(args)
+        return _R(json.dumps(dep)) if args[:2] == ("get", "deployment") else _R()
+    monkeypatch.setattr(rb, "kubectl", fake)
+    with pytest.raises(KeyboardInterrupt):
+        rb.run_episode("boutique", "cartservice", 0, 300, ftype="cpu", param="25m",
+                       sleep=lambda s: (_ for _ in ()).throw(KeyboardInterrupt()))
+    patches = [json.loads(c[-1]) for c in calls if c[0] == "patch"]
+    starved, restored = patches[0][0]["value"], patches[-1][0]["value"]
+    assert starved["limits"]["cpu"] == "25m" and starved["requests"]["cpu"] == "25m"
+    assert starved["limits"]["memory"] == "128Mi"                                     # only CPU is touched
+    assert restored == original                                                       # put back even after Ctrl+C
+
+
+def test_crash_fault_deletes_the_pod_repeatedly_and_logs_the_type(monkeypatch):
+    calls = []
+    monkeypatch.setattr(rb, "kubectl", lambda *a, **k: calls.append(a) or _R())
+    clock = {"t": 0.0}
+    monkeypatch.setattr(rb.time, "monotonic", lambda: clock["t"])
+
+    def sleep(s):
+        clock["t"] += s
+    row = rb.run_episode("boutique", "cartservice", 0, 150, ftype="crash", param=60, sleep=sleep)
+    deletes = [c for c in calls if c[:2] == ("delete", "pod")]
+    assert len(deletes) == 3 and all("app=cartservice" in c for c in deletes)      # at 0, 60 and 120 s
+    assert row["type"] == "crash" and row["completed"] is True and row["delay_ms"] == 0
+
+
+def test_episodes_from_a_mixed_log_keep_their_type(tmp_path):
+    log = tmp_path / "f.jsonl"
+    log.write_text("\n".join(json.dumps(r) for r in [
+        {"episode": 1, "node": "a", "type": "abort", "delay_ms": 0, "param": 50.0, "start": T0.isoformat(),
+         "end": (T0 + timedelta(minutes=5)).isoformat(), "completed": True},
+        {"episode": 2, "node": "b", "delay_ms": 100, "start": T0.isoformat(), "end": T0.isoformat(), "completed": True}]),
+        encoding="utf-8")
+    eps = real.load_episodes(str(log))
+    assert [(e["type"], e["param"]) for e in eps] == [("abort", 50.0), ("delay", 100)]
+
+
+def test_plan_prints_every_fault_type(capsys):
+    """Regression: the plan text was built for all types at once and crashed on the CPU parameter "25m"."""
+    rb.main(["--namespace", "boutique", "--types", "delay", "abort", "cpu", "crash", "--per-type", "2", "--targets", "a", "b"])
+    out = capsys.readouterr().out
+    assert "CPU limit 25m" in out and "50% errors" in out and "pod killed every 60 s" in out and "Nothing was changed" in out

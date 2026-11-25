@@ -1,0 +1,57 @@
+# Learned by controlplane.learn_baseline on 2026-11-25T03:49:07.582454Z
+# Source: topo/live_bookinfo_20261125c.jsonl (fault log: none)  records=78  services=3
+# services: median and q0.99 (ms) of a service's rate-weighted incoming / outgoing latency (--scorer baseline)
+# edges:    median and q0.99 of each edge's latency p95 (ms) and error fraction (--scorer edge)
+# All from NORMAL traffic. A service or edge not listed falls back to the hand-set scale.
+method: envelope-q0.99
+floor_ms: 10.0
+min_rate: 0.05
+err_floor: 0.05
+edge_min_rate: 0.016667
+services:
+  details:
+    in_lat:
+      median: 4.8
+      high: 15.422499999999987
+    in_rate_median: 0.28889530878463965
+    samples: 78
+  ratings:
+    in_lat:
+      median: 4.771428571428571
+      high: 8.249991443113371
+    in_rate_median: 0.2000133342222815
+    samples: 78
+  reviews:
+    in_lat:
+      median: 41.5625
+      high: 85.28750000000001
+    out_lat:
+      median: 4.771428571428571
+      high: 8.249991443113371
+    in_rate_median: 0.28890321067769453
+    samples: 78
+edges:
+  productpage>details:
+    lat:
+      median: 4.8
+      high: 15.422499999999989
+    err:
+      median: 0.0
+      high: 0.0
+    samples: 78
+  productpage>reviews:
+    lat:
+      median: 41.5625
+      high: 85.28750000000001
+    err:
+      median: 0.0
+      high: 0.0
+    samples: 78
+  reviews>ratings:
+    lat:
+      median: 4.771428571428571
+      high: 8.249991443113371
+    err:
+      median: 0.0
+      high: 0.0
+    samples: 78
