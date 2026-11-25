@@ -170,11 +170,78 @@ What this says, plainly:
 - Small numbers: 8 episodes per type and 0.69 h of fault-free time. "0 false alarms" in 0.69 h only bounds the rate at
   roughly 4 per hour (95%, rule of three).
 
+## Result 6: run4, a fresh measurement of image 0.7.1 (fan-out weighting)
+The fan-out fix (REPORT_PHASE6.md) was made after a live failure and had only been checked on data the design was
+developed on. Run4 is new data: 2026-11-25, 11:03-16:47 UTC, `topo/run4.sh`. 30 min of fault-free traffic, 40 episodes
+(10 per type, same fault sizes and timing as run3, new order and services, seed 11), 20 min of fault-free traffic. All 40
+episodes completed; nothing was left behind (no VirtualService in `boutique`, every CPU limit back to its default,
+`topo/results/run4_cpu_after.txt`).
+
+One incident, excluded from every number below: after the crash episode on currencyservice (episode 12) its new pod was
+scheduled on agent-1, which had no copy of the image (the node had re-registered that morning) and failed to pull it.
+currencyservice was down from 13:02:18 to 13:09:42 UTC, in the gap before episode 13 (no episode overlaps it). The
+window 13:02:18-13:10:30 is excluded. Without the exclusion the per-edge scorer has one false-alarm onset, inside that
+window (`phase4_fresh_run4_noexclude.md`). All Boutique images were then imported into the cluster so later crashes
+could not hit the same problem.
+
+**6a. The deployed controller, live** (`meshheal-boutique`, image 0.7.1, shadow mode, per-edge scorer with the baseline
+learned that morning; 1358 checks exported read-only from the fleet store to `run4_controller_boutique_events.jsonl`;
+`phase4_live_shadow_run4.md`):
+
+| fault type | caught | wrong service first | median detection delay |
+|---|---|---|---|
+| abort | 7/10 | 5 | 78 s |
+| CPU starvation | 9/10 | 1 | 81 s |
+| crash | 9/10 | 4 | 77 s |
+| delay | 9/10 | 4 | 74 s |
+
+34/40 caught. In 14 of the 40 episodes another service alarmed first (10 of them later caught, 4 missed); 12 of those
+14 first alarms were on frontend or checkoutservice, the callers on the checkout path. Missed: aborts on recommendationservice,
+emailservice and checkoutservice, the currencyservice crash (episode 12, the one followed by the outage), a delay on
+checkoutservice, CPU starvation of productcatalogservice. One false-alarm onset (paymentservice, 12:24:14) in 0.80 h of
+fault-free time.
+
+**6b. Offline fresh test** (`phase4_fresh_run4.md`; baselines from the first 60% of the fault-free snapshots before the
+run, 59 snapshots, about 17 min; false alarms on the other 131 fault-free snapshots, 0.55 h):
+
+| scorer | abort | CPU | crash | delay | wrong service first | false-alarm onsets (0.55 h) |
+|---|---|---|---|---|---|---|
+| **per edge (0.7.1)** | **7/10** | **7/10** | **9/10** | **6/10** | 12 of 40 | **0** |
+| per service | 1/10 | 4/10 | 5/10 | 6/10 | 15 of 40 | 0 |
+| MLP (5 seeds) | 0/10 | 2/10 | 3/10 | 3/10 | 5 of 40 | 0 |
+| hand-set rule | 1/10 | 2/10 | 3/10 | 6/10 | 31 of 40 | 15 (27 per hour) |
+
+Per snapshot (377 steady fault snapshots): per edge AP 0.403, root cause first 0.539 (abort 0.64, crash 0.66, delay
+0.65, CPU 0.18); per service 0.197 / 0.266; MLP 0.285 / 0.268; rule 0.177 / 0.196.
+
+Run3 and run4 side by side (per-edge scorer):
+
+| | run3 (0.7.0 design, 32 episodes) | run4 (0.7.1, 40 episodes) |
+|---|---|---|
+| offline caught | 28/32 (88%) | 29/40 (73%) |
+| live caught | 29/32 (91%) | 34/40 (85%) |
+| live: another service alarmed first | 6 of 32 | 14 of 40 |
+| AP / root cause first, per snapshot | 0.512 / 0.592 | 0.403 / 0.539 |
+| false-alarm onsets | 0 offline (0.69 h), 0 live (0.30 h) | 0 offline (0.55 h), 1 live (0.80 h) |
+
+What this says, plainly:
+- The per-edge scorer is still far ahead of the alternatives on new data, and the only one that handles aborts and
+  crashes. Its false alarms stay low (one onset in about 1.4 h of fault-free time across both measurements).
+- Run4 is **worse than run3** on detection and clearly worse on ranking (another service alarmed first live: 6 of 32 -> 14 of 40).
+  Run4 does not show that the fan-out change helped on unseen data. The fix was made for one canary case; on
+  run3 it changed nothing. Whether it causes the drop was not tested (run4 was not re-scored with `fanout=False`).
+  The two runs also differ in services, order and learning data (run4 learned from about 17 min, run3 from 27 min),
+  so the drop cannot be assigned to one cause.
+- CPU starvation is still ranked poorly per snapshot (0.18); delay detection is 6/10 offline, about as in run3 (6/8).
+- 10 episodes per type and under an hour of fault-free time per measurement: the per-type rates move by 10-20 points
+  with one episode, so differences of one or two episodes are noise.
+
 ## What this does and does not show
 - Shows: a learned per-service envelope removes most of the hand-set rule's portability problem, with no labels and no
   training, and is about as good as the best trained model on the one independent real app tested.
-- Shows (run3): with per-edge scoring the controller caught 28-29 of 32 faults of four types on fresh data, offline and
-  live, with no false alarm in the little fault-free time measured.
+- Shows (run3, run4): with per-edge scoring the controller caught 28-29 of 32 (run3) and 29-34 of 40 (run4) faults of
+  four types on fresh data, offline and live, with one false-alarm onset in about 2.3 h of fault-free time across both.
+  Another service often alarms first (live: 6 of 32 episodes in run3, 14 of 40 in run4).
 - Does not show: production readiness. Two real applications on one laptop cluster, injected faults, load-generated
   traffic, under an hour of fault-free time per measurement, 8 episodes per fault type. Delay detection dropped between
-  run2 and run3 and the reason is not established. Remediation for Boutique was not tested (no playbook).
+  run2 and run3 and the reason is not established. Run4 did not show that the 0.7.1 fan-out fix helps on unseen data. Remediation for Boutique was not tested (no playbook).

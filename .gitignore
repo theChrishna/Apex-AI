@@ -58,3 +58,5 @@ NEXT_STEPS_RUN3.md
 topo/after_run3.log
 topo/canary_playbook.yaml
 topo/empty_playbook.yaml
+topo/run4.log
+topo/collector_run4.log

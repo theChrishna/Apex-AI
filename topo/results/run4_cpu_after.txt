@@ -1,0 +1,12 @@
+adservice 300m
+cartservice 300m
+checkoutservice 200m
+currencyservice 200m
+emailservice 200m
+frontend 200m
+loadgenerator 500m
+paymentservice 200m
+productcatalogservice 200m
+recommendationservice 200m
+redis-cart 125m
+shippingservice 200m
