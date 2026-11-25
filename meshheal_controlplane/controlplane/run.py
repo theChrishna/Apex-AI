@@ -16,7 +16,7 @@ from .config import Config
 from .controller import Controller, step_from_file
 from .health import Health, start_server
 from .playbook import DEFAULT_PATH, Playbook
-from .scorer import BaselineScorer, ResilientScorer, RuleScorer
+from .scorer import BaselineScorer, EdgeScorer, ResilientScorer, RuleScorer
 from .snapshot import BadSnapshot, parse_snapshot
 
 
@@ -24,12 +24,13 @@ def build_scorer(name, cfg, gnn_manifest=None, gnn_kill_file=None, baseline_path
     rule = RuleScorer(cfg.self_lat_full_ms)
     if name == "rule":
         return rule
-    if name == "baseline":
+    if name in ("baseline", "edge"):
         path = baseline_path or cfg.baseline_path
         if not path:
-            raise SystemExit("--scorer baseline needs --baseline FILE (learn one with python -m controlplane.learn_baseline)")
+            raise SystemExit(f"--scorer {name} needs --baseline FILE (learn one with python -m controlplane.learn_baseline)")
         # the learned scorer is the primary; the hand-set rule is the fallback if it ever fails
-        return ResilientScorer(BaselineScorer.from_file(path, full_ms=cfg.self_lat_full_ms), rule, cfg.scorer_timeout_s)
+        cls = EdgeScorer if name == "edge" else BaselineScorer
+        return ResilientScorer(cls.from_file(path, full_ms=cfg.self_lat_full_ms), rule, cfg.scorer_timeout_s)
     from .gnn_adapter import GnnScorer
     return ResilientScorer(GnnScorer(gnn_manifest, kill_file=gnn_kill_file), rule, cfg.scorer_timeout_s)
 
@@ -71,7 +72,7 @@ def build_parser():
     ap.add_argument("--config", default=None, help="YAML file of Config settings (see meshheal.example.yaml)")
     ap.add_argument("--playbook", default=None, help="YAML playbook (default playbooks/bookinfo.yaml)")
     ap.add_argument("--namespace", default=None)
-    ap.add_argument("--scorer", choices=["rule", "baseline", "gnn"], default="rule")
+    ap.add_argument("--scorer", choices=["rule", "baseline", "edge", "gnn"], default="rule")
     ap.add_argument("--baseline", default=None, help="learned baseline YAML for --scorer baseline (controlplane.learn_baseline)")
     ap.add_argument("--gnn-manifest", default="../models/gnn_final_manifest.json",
                     help="written by train_final.py (seed weights sit next to it)")

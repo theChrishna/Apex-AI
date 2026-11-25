@@ -87,6 +87,36 @@ def build_baseline(bag, min_samples=20, q=0.99):
     return out, notes
 
 
+def collect_normal_edges(records, min_rate=1 / 60):
+    """{"src>dst": {"lat": [...], "err": [...]}} from normal records: latency p95 and error fraction of every edge that
+    carried at least min_rate req/s in that snapshot (an idle edge's p95 says nothing)."""
+    from .scorer import EdgeScorer
+    bag = {}
+    for r in records:
+        if r.get("phase") not in ("normal", None):
+            continue
+        for e in r.get("edges", []):
+            if e.get("destination") == "unknown" or EdgeScorer.rate(e) < min_rate:
+                continue
+            lat = e.get("latency_p95")
+            if not isinstance(lat, (int, float)) or lat != lat:
+                continue
+            d = bag.setdefault(EdgeScorer.key(e["source"], e["destination"]), {"lat": [], "err": []})
+            d["lat"].append(float(lat))
+            d["err"].append(EdgeScorer.error_fraction(e))
+    return bag
+
+
+def build_edges(bag, min_samples=20, q=0.99):
+    out, notes = {}, []
+    for k, d in sorted(bag.items()):
+        if len(d["lat"]) < min_samples:
+            notes.append(f"edge {k}: only {len(d['lat'])} normal samples (< {min_samples}); left to the hand-set scale")
+            continue
+        out[k] = {"lat": envelope(d["lat"], q), "err": envelope(d["err"], q), "samples": len(d["lat"])}
+    return out, notes
+
+
 def _load_records(path):
     with open(path, encoding="utf-8") as f:
         return [{**json.loads(line), "phase": "normal"} for line in f if line.strip()]
@@ -120,6 +150,8 @@ def main(argv=None):
 
     bag = collect_normal_stats(records)
     base, notes = build_baseline(bag, min_samples=a.min_samples, q=a.quantile)
+    edges, edge_notes = build_edges(collect_normal_edges(records), min_samples=a.min_samples, q=a.quantile)
+    notes += edge_notes
     if not base:
         print(f"no baselines learned: {len(records)} records, bag keys {list(bag)}; notes:", file=sys.stderr)
         for n in notes:
@@ -129,13 +161,16 @@ def main(argv=None):
     import yaml
     header = (f"# Learned by controlplane.learn_baseline on {datetime.utcnow().isoformat()}Z\n"
               f"# Source: {a.snapshots} (fault log: {a.fault_log or 'none'})  records={len(records)}  services={len(base)}\n"
-              f"# Median and q{a.quantile} (ms) of a service's rate-weighted incoming / outgoing latency during NORMAL traffic.\n"
-              "# The controller loads this with --baseline; a service not listed falls back to the hand-set scale.\n")
+              f"# services: median and q{a.quantile} (ms) of a service's rate-weighted incoming / outgoing latency (--scorer baseline)\n"
+              f"# edges:    median and q{a.quantile} of each edge's latency p95 (ms) and error fraction (--scorer edge)\n"
+              "# All from NORMAL traffic. A service or edge not listed falls back to the hand-set scale.\n")
     with open(a.out, "w", encoding="utf-8") as f:
         f.write(header)
         yaml.safe_dump({"method": f"envelope-q{a.quantile}", "floor_ms": a.floor_ms, "min_rate": a.min_rate,
-                        "services": base}, f, sort_keys=False)
-    print(f"wrote {a.out}: {len(base)} service(s) with baselines, from {sum(len(d['in_lat']) for d in bag.values())} samples", file=sys.stderr)
+                        "err_floor": 0.05, "edge_min_rate": round(1 / 60, 6),
+                        "services": base, "edges": edges}, f, sort_keys=False)
+    print(f"wrote {a.out}: {len(base)} service(s) and {len(edges)} edge(s) with baselines, "
+          f"from {sum(len(d['in_lat']) for d in bag.values())} samples", file=sys.stderr)
     for n in notes:
         print(f"note: {n}", file=sys.stderr)
 

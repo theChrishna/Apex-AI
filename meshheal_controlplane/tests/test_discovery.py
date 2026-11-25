@@ -9,14 +9,27 @@ from controlplane.discovery import (check_namespace, discover_edges, discover_ve
 
 
 def vec(*rows):
+    """Series as Prometheus returns them. Every series also carries destination_service_name (= destination_app here),
+    the label the caller-side queries group by."""
+    def lab(m):
+        m = dict(m)
+        if "destination_app" in m:
+            m.setdefault("destination_service_name", m["destination_app"])
+        return m
     return {"status": "success", "data": {"resultType": "vector",
-                                          "result": [{"metric": m, "value": [0, str(v)]} for m, v in rows]}}
+                                          "result": [{"metric": lab(m), "value": [0, str(v)]} for m, v in rows]}}
 
 
-def fake_prom(ns="shop"):
-    """A Prometheus answering by query text. Mesh: web -> cart -> db, web -> ads (ads never answers latency)."""
+def fake_prom(ns="shop", src_abort=False):
+    """A Prometheus answering by query text. Mesh: web -> cart -> db, web -> ads (ads never answers latency).
+    src_abort: the caller-side counts show an injected abort on web -> cart that the destination never saw."""
     def q(promql):
         assert f'"{ns}"' in promql
+        if src_abort and 'reporter="source"' in promql and "istio_requests_total" in promql:
+            # as recorded live: an aborted request has destination_app="unknown" and only the service name is known
+            if "response_flags" in promql:
+                return vec(({"source_app": "web", "destination_app": "unknown", "destination_service_name": "cart"}, 2.0))
+            return vec(({"source_app": "web", "destination_app": "unknown", "destination_service_name": "cart"}, 4.0))
         if "istio_request_duration" in promql:
             return vec(({"source_app": "web", "destination_app": "cart"}, 12.5),
                        ({"source_app": "cart", "destination_app": "db"}, 5), ({"source_app": "web", "destination_app": "ads"}, "NaN"))
@@ -41,7 +54,8 @@ def test_edges_are_merged_across_the_three_metrics_with_defaults_for_missing_one
     edges = {(e["source"], e["destination"]): e for e in discover_edges(fake_prom(), "shop")}
     assert set(edges) == {("web", "cart"), ("cart", "db"), ("web", "ads")}
     assert edges[("web", "cart")] == {"source": "web", "destination": "cart", "request_rate": 4.0,
-                                      "error_rate": pytest.approx(0.03), "latency_p95": 12.5}
+                                      "error_rate": pytest.approx(0.03), "latency_p95": 12.5,
+                                      "src_request_rate": 4.0, "src_error_rate": 0.02}   # one combined caller-side query
     assert edges[("web", "cart")]["error_rate"] == pytest.approx(0.01 + 0.02)  # HTTP 5xx + gRPC failures
     assert edges[("cart", "db")]["error_rate"] == 0.5                          # gRPC-only failures are counted
     assert math.isnan(edges[("web", "ads")]["latency_p95"])                    # idle edge: NaN kept, filtered later
@@ -83,7 +97,8 @@ def test_collect_builds_the_same_snapshot_format_the_controller_reads(tmp_path):
     out = tmp_path / "live.jsonl"
     collect.append_snapshot(str(out), snap)
     obj = json.loads(out.read_text(encoding="utf-8"))
-    assert "skipped_edges" not in obj and set(obj) == {"timestamp", "nodes", "edges"}
+    assert "skipped_edges" not in obj and set(obj) == {"timestamp", "nodes", "edges", "subsets"}
+    assert obj["subsets"]["cart"]["v2"]["p95"] is None                    # a version without samples: null, not NaN
     parsed = parse_snapshot(obj, expected_nodes=("web", "cart", "db"))
     assert len(parsed.edges) == 2
 
@@ -95,3 +110,34 @@ def test_collect_returns_none_when_nothing_is_valid():
 def test_collect_refuses_to_append_to_the_uploaded_data_file():
     with pytest.raises(SystemExit):
         collect.main(["--namespace", "shop", "--out", "somewhere/snapshots.jsonl", "--once"])
+
+
+def test_errors_injected_at_the_caller_are_only_visible_in_the_source_side_fields():
+    """Istio fault.abort answers in the caller's sidecar: the destination never sees those requests, so error_rate (the
+    destination's count) stays 0 while src_error_rate shows them."""
+    edges = {(e["source"], e["destination"]): e for e in discover_edges(fake_prom(src_abort=True), "shop")}
+    wc = edges[("web", "cart")]
+    assert wc["src_error_rate"] == 2.0 and wc["src_request_rate"] == 4.0
+    assert wc["error_rate"] == pytest.approx(0.03)                             # destination view unchanged
+    assert edges[("cart", "db")]["src_error_rate"] == 0.0                      # defaults when there is no series
+
+
+def test_caller_side_failure_query_counts_flags_and_groups_by_service_name():
+    from controlplane.discovery import edge_queries
+    q = edge_queries("shop")
+    assert "by (source_app, destination_service_name)" in q["src_error_rate"]
+    assert 'response_flags=~".*(FI|UH' in q["src_error_rate"] and " or " in q["src_error_rate"]
+    assert "DI" not in q["src_error_rate"].split("response_flags")[1]                # a delay is not a failure
+    assert "destination_app" in q["request_rate"]                                      # the old fields are unchanged
+
+
+def test_unknown_endpoints_never_become_services():
+    edges = discover_edges(lambda p: vec(({"source_app": "web", "destination_app": "unknown"}, 1.0)), "shop")
+    assert edges == []
+
+
+def test_istio_catch_all_clusters_are_not_services():
+    rows = [({"source_app": "frontend", "destination_app": "unknown", "destination_service_name": n}, 1.0)
+            for n in ("PassthroughCluster", "BlackHoleCluster")]
+    assert discover_edges(lambda p: vec(*rows), "shop") == []
+

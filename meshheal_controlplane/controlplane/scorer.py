@@ -107,6 +107,122 @@ class BaselineScorer:
         return out
 
 
+class EdgeScorer:
+    """Per-EDGE learned envelopes of latency and error fraction (Phase 4, second step).
+
+    Why per edge: BaselineScorer works per service, so a service's outgoing latency is a rate-weighted average over ALL
+    its calls. A victim waiting on one slow but rarely called edge (Online Boutique: frontend -> shipping) barely moves
+    that average, the victim does not cancel, and the victim gets blamed. Here a service cancels against its single
+    worst outgoing edge. Each edge also learns its own normal range, including the noise of a rarely used edge, so the
+    hard 0.05 req/s floor that blinded the scorer to Boutique's checkout path is replaced by "at least one request a
+    minute".
+
+    For each service S:
+      latency: the incoming edge furthest above its normal high (in units of that edge's spread), minus, in ms, the worst
+               excess on S's outgoing edges (a victim cancels against the edge it waits on)
+      errors:  the incoming error fraction above normal, minus the worst outgoing error excess (a service that only
+               passes its callee's errors on cancels), in units of the edge's error spread (at least err_floor)
+      risk = saturate(max(latency part, error part)), with the same act-threshold-preserving curve as BaselineScorer.
+
+    Error fractions use the caller-side counts (src_request_rate / src_error_rate) when the snapshot has them: errors
+    injected by Istio never reach the destination. Older snapshots only have destination-side counts.
+    Edges without a learned envelope behave like the hand-set rule (normal high 0 ms, spread full_ms).
+    """
+    name = "edge"
+    needs_snapshot = True
+
+    def __init__(self, edges=None, full_ms=100.0, floor_ms=10.0, min_rate=1 / 60, err_floor=0.05,
+                 saturation="soft", anchor=0.85):
+        if saturation not in ("clamp", "soft"):
+            raise ValueError("saturation must be clamp or soft")
+        self.edges = dict(edges or {})
+        self.full_ms, self.floor_ms, self.min_rate, self.err_floor = float(full_ms), float(floor_ms), float(min_rate), float(err_floor)
+        self.saturation, self.anchor = saturation, float(anchor)
+
+    @classmethod
+    def from_file(cls, path, **kw):
+        import yaml
+        with open(path, encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+        if not isinstance(data, dict) or not isinstance(data.get("edges"), dict):
+            raise ValueError(f"{path}: expected a mapping with 'edges' (learn it with controlplane.learn_baseline)")
+        opts = {k: data[k] for k in ("floor_ms", "anchor", "err_floor") if isinstance(data.get(k), (int, float))}
+        if isinstance(data.get("edge_min_rate"), (int, float)):
+            opts["min_rate"] = data["edge_min_rate"]
+        opts.update({k: v for k, v in kw.items() if v is not None})
+        return cls(edges=data["edges"], **opts)
+
+    @staticmethod
+    def key(src, dst):
+        return f"{src}>{dst}"
+
+    @staticmethod
+    def rate(e):
+        return max(e.get("request_rate") or 0.0, e.get("src_request_rate") or 0.0)
+
+    @staticmethod
+    def error_fraction(e):
+        """Share of failed requests on an edge, caller-side counts preferred. 0 when there is no traffic."""
+        if (e.get("src_request_rate") or 0.0) > 0:
+            return min(1.0, (e.get("src_error_rate") or 0.0) / e["src_request_rate"])
+        r = e.get("request_rate") or 0.0
+        return min(1.0, (e.get("error_rate") or 0.0) / r) if r > 0 else 0.0
+
+    def _lat(self, key, ms):
+        b = self.edges.get(key, {}).get("lat")
+        if isinstance(b, dict) and "median" in b and "high" in b:
+            high, spread = float(b["high"]), max(float(b["high"]) - float(b["median"]), self.floor_ms)
+        else:
+            high, spread = 0.0, self.full_ms
+        return max(0.0, ms - high), spread
+
+    def _err(self, key, frac):
+        b = self.edges.get(key, {}).get("err")
+        if isinstance(b, dict) and "median" in b and "high" in b:
+            high, spread = float(b["high"]), max(float(b["high"]) - float(b["median"]), self.err_floor)
+        else:
+            high, spread = 0.0, self.err_floor
+        return max(0.0, frac - high), spread
+
+    def _saturate(self, raw):
+        if raw <= 0:
+            return 0.0
+        if self.saturation == "clamp":
+            return min(1.0, raw)
+        return 1.0 - (1.0 - self.anchor) ** (raw / self.anchor)
+
+    def score(self, stats, snap=None):
+        if snap is None:
+            raise ValueError("EdgeScorer needs the snapshot")
+        nodes = set(stats) | {n["id"] for n in snap.nodes}
+        best_in = {n: (0.0, 0.0, self.full_ms) for n in nodes}       # node -> (normalised excess, excess ms, spread)
+        out_ms = {n: 0.0 for n in nodes}
+        best_in_err = {n: (0.0, 0.0, self.err_floor) for n in nodes}
+        out_err = {n: 0.0 for n in nodes}
+        for e in snap.edges:
+            s, d = e["source"], e["destination"]
+            if self.rate(e) < self.min_rate:
+                continue
+            k = self.key(s, d)
+            ex_ms, spread = self._lat(k, e.get("latency_p95") or 0.0)
+            ex_err, espread = self._err(k, self.error_fraction(e))
+            if d in best_in and ex_ms / spread > best_in[d][0]:
+                best_in[d] = (ex_ms / spread, ex_ms, spread)
+            if d in best_in_err and ex_err / espread > best_in_err[d][0]:
+                best_in_err[d] = (ex_err / espread, ex_err, espread)
+            if s in out_ms:
+                out_ms[s] = max(out_ms[s], ex_ms)
+                out_err[s] = max(out_err[s], ex_err)
+        out = {}
+        for n in nodes:
+            _, in_ms, spread = best_in[n]
+            raw_lat = (in_ms - out_ms[n]) / spread
+            _, in_err, espread = best_in_err[n]
+            raw_err = (in_err - out_err[n]) / espread
+            out[n] = self._saturate(max(raw_lat, raw_err))
+        return out
+
+
 def _score(scorer, stats, snap):
     """Scorers that set needs_snapshot (the GNN) also get the raw snapshot."""
     return scorer.score(stats, snap) if getattr(scorer, "needs_snapshot", False) else scorer.score(stats)

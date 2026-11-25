@@ -10,7 +10,7 @@ import os
 import time
 from datetime import datetime, timezone
 
-from .discovery import discover_edges, nodes_from_edges, prom_query_fn, valid_edge
+from .discovery import discover_edges, discover_subsets, nodes_from_edges, prom_query_fn, valid_edge
 
 PROTECTED = {"snapshots.jsonl", "fault_log.jsonl"}
 
@@ -21,8 +21,12 @@ def build_snapshot(query, ns, window="1m", now=None):
     ok = [e for e in edges if valid_edge(e)]
     if not ok:
         return None
-    return {"timestamp": (now or datetime.now(timezone.utc)).isoformat(),
+    snap = {"timestamp": (now or datetime.now(timezone.utc)).isoformat(),
             "nodes": nodes_from_edges(ok, ns), "edges": ok, "skipped_edges": len(edges) - len(ok)}
+    subsets = discover_subsets(query, ns, window)
+    if subsets:                          # only services running two or more versions
+        snap["subsets"] = subsets
+    return snap
 
 
 def append_snapshot(path, snap, max_bytes=0):

@@ -17,6 +17,9 @@ class Snapshot:
     ts: datetime
     nodes: list
     edges: list
+    # optional per-version stats of services that run more than one version:
+    # {service: {version: {"rate": req/s, "err": failed share, "p95": ms}}} (collector >= 0.7); None in older snapshots
+    subsets: dict = None
 
 
 def parse_ts(s):
@@ -45,7 +48,10 @@ def parse_snapshot(obj, expected_nodes=()):
                     e[k] = 0.0
                     continue
                 raise BadSnapshot(f"non_finite:{e.get('source')}->{e.get('destination')}:{k}")
-    return Snapshot(ts=ts, nodes=nodes, edges=edges)
+    subsets = obj.get("subsets")
+    if subsets is not None and not isinstance(subsets, dict):
+        raise BadSnapshot("malformed: subsets")
+    return Snapshot(ts=ts, nodes=nodes, edges=edges, subsets=subsets)
 
 
 def read_last_snapshot(path, expected_nodes=()):
