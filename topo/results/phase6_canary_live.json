@@ -1,0 +1,268 @@
+{
+ "latency": "300ms",
+ "reroute": {
+  "ts": "2026-11-25T10:19:47.640641+00:00",
+  "event": "REROUTE",
+  "dry_run": false,
+  "node": "productcatalogservice",
+  "virtual_service": "productcatalogservice",
+  "weights": {
+   "v1": 100,
+   "v2": 0
+  },
+  "culprit": "productcatalogservice",
+  "risk": 1.0,
+  "why": "roll back the bad canary to the stable version"
+ },
+ "probe_failed": [
+  {
+   "ts": "2026-11-25T10:23:17.742247+00:00",
+   "event": "PROBE_FAILED",
+   "dry_run": false,
+   "node": "productcatalogservice",
+   "virtual_service": "productcatalogservice",
+   "weights": {
+    "v1": 100,
+    "v2": 0
+   },
+   "culprit": "productcatalogservice",
+   "why": "risk=1.00"
+  }
+ ],
+ "release": {
+  "ts": "2026-11-25T10:30:18.040399+00:00",
+  "event": "RELEASE",
+  "dry_run": false,
+  "node": "productcatalogservice",
+  "virtual_service": "productcatalogservice",
+  "weights": {
+   "v1": 50,
+   "v2": 50
+  },
+  "culprit": "productcatalogservice",
+  "risk": 0.0
+ },
+ "final_weights": {
+  "v1": 50,
+  "v2": 50
+ },
+ "final_state": null,
+ "events": [
+  {
+   "ts": "2026-11-25T10:15:32.442808+00:00",
+   "event": "ACTION_BLOCKED",
+   "dry_run": false,
+   "node": "frontend",
+   "risk": 1.0,
+   "reason": "no_healthy_alternative"
+  },
+  {
+   "ts": "2026-11-25T10:16:32.476760+00:00",
+   "event": "ACTION_BLOCKED",
+   "dry_run": false,
+   "node": "frontend",
+   "risk": 1.0,
+   "reason": "no_healthy_alternative"
+  },
+  {
+   "ts": "2026-11-25T10:17:47.506026+00:00",
+   "event": "ACTION_BLOCKED",
+   "dry_run": false,
+   "node": "frontend",
+   "risk": 1.0,
+   "reason": "no_healthy_alternative"
+  },
+  {
+   "ts": "2026-11-25T10:18:47.550873+00:00",
+   "event": "ACTION_BLOCKED",
+   "dry_run": false,
+   "node": "frontend",
+   "risk": 1.0,
+   "reason": "no_healthy_alternative"
+  },
+  {
+   "ts": "2026-11-25T10:19:47.640641+00:00",
+   "event": "REROUTE",
+   "dry_run": false,
+   "node": "productcatalogservice",
+   "virtual_service": "productcatalogservice",
+   "weights": {
+    "v1": 100,
+    "v2": 0
+   },
+   "culprit": "productcatalogservice",
+   "risk": 1.0,
+   "why": "roll back the bad canary to the stable version"
+  },
+  {
+   "ts": "2026-11-25T10:21:32.661505+00:00",
+   "event": "ACTION_BLOCKED",
+   "dry_run": false,
+   "node": "frontend",
+   "risk": 1.0,
+   "reason": "no_healthy_alternative"
+  },
+  {
+   "ts": "2026-11-25T10:21:47.697689+00:00",
+   "event": "PROBE_START",
+   "dry_run": false,
+   "node": "productcatalogservice",
+   "virtual_service": "productcatalogservice",
+   "weights": {
+    "v2": 30,
+    "v1": 70
+   },
+   "culprit": "productcatalogservice"
+  },
+  {
+   "ts": "2026-11-25T10:23:17.742247+00:00",
+   "event": "PROBE_FAILED",
+   "dry_run": false,
+   "node": "productcatalogservice",
+   "virtual_service": "productcatalogservice",
+   "weights": {
+    "v1": 100,
+    "v2": 0
+   },
+   "culprit": "productcatalogservice",
+   "why": "risk=1.00"
+  },
+  {
+   "ts": "2026-11-25T10:25:17.854376+00:00",
+   "event": "PROBE_START",
+   "dry_run": false,
+   "node": "productcatalogservice",
+   "virtual_service": "productcatalogservice",
+   "weights": {
+    "v2": 30,
+    "v1": 70
+   },
+   "culprit": "productcatalogservice"
+  },
+  {
+   "ts": "2026-11-25T10:26:47.907959+00:00",
+   "event": "PROBE_FAILED",
+   "dry_run": false,
+   "node": "productcatalogservice",
+   "virtual_service": "productcatalogservice",
+   "weights": {
+    "v1": 100,
+    "v2": 0
+   },
+   "culprit": "productcatalogservice",
+   "why": "risk=0.98"
+  },
+  {
+   "ts": "2026-11-25T10:28:47.974576+00:00",
+   "event": "PROBE_START",
+   "dry_run": false,
+   "node": "productcatalogservice",
+   "virtual_service": "productcatalogservice",
+   "weights": {
+    "v2": 30,
+    "v1": 70
+   },
+   "culprit": "productcatalogservice"
+  },
+  {
+   "ts": "2026-11-25T10:30:18.040399+00:00",
+   "event": "RELEASE",
+   "dry_run": false,
+   "node": "productcatalogservice",
+   "virtual_service": "productcatalogservice",
+   "weights": {
+    "v1": 50,
+    "v2": 50
+   },
+   "culprit": "productcatalogservice",
+   "risk": 0.0
+  }
+ ],
+ "timeline": [
+  {
+   "utc": "10:09:12",
+   "t_s": 11,
+   "msg": "canary set up: v1 and v2 healthy, VirtualService 50/50"
+  },
+  {
+   "utc": "10:14:04",
+   "t_s": 303,
+   "msg": "MeshHeal Boutique release in ACT mode with the canary playbook"
+  },
+  {
+   "utc": "10:17:56",
+   "t_s": 535,
+   "msg": "BAD RELEASE: v2 now adds 300ms to every request"
+  },
+  {
+   "utc": "10:19:56",
+   "t_s": 655,
+   "msg": "REROUTE",
+   "weights": {
+    "v1": 100,
+    "v2": 0
+   },
+   "risk": 1.0
+  },
+  {
+   "utc": "10:19:56",
+   "t_s": 655,
+   "msg": "VirtualService after the reroute",
+   "weights": {
+    "v1": 100
+   },
+   "state_recorded": true
+  },
+  {
+   "utc": "10:24:56",
+   "t_s": 956,
+   "msg": "1 probe(s) failed while v2 was still bad"
+  },
+  {
+   "utc": "10:25:01",
+   "t_s": 961,
+   "msg": "v2 FIXED (extra latency removed)"
+  },
+  {
+   "utc": "10:30:20",
+   "t_s": 1279,
+   "msg": "RELEASE",
+   "weights": {
+    "v1": 50,
+    "v2": 50
+   },
+   "state_left": null
+  },
+  {
+   "utc": "10:31:09",
+   "t_s": 1328,
+   "msg": "cleanup: release back to shadow mode, empty playbook"
+  },
+  {
+   "utc": "10:31:09",
+   "t_s": 1328,
+   "msg": "cleanup: VirtualService deleted"
+  },
+  {
+   "utc": "10:31:09",
+   "t_s": 1328,
+   "msg": "cleanup: DestinationRule deleted"
+  },
+  {
+   "utc": "10:31:09",
+   "t_s": 1328,
+   "msg": "cleanup: v2 deployment deleted"
+  },
+  {
+   "utc": "10:31:09",
+   "t_s": 1328,
+   "msg": "cleanup: version label removed from v1"
+  },
+  {
+   "utc": "10:31:14",
+   "t_s": 1333,
+   "msg": "left behind with meshheal-test=canary",
+   "objects": "none"
+  }
+ ]
+}

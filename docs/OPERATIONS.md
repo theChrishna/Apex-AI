@@ -13,11 +13,11 @@ Both happen in the same API call, so the recorded state and the weights cannot d
 ## Install (shadow first)
 Build the image (not pushed anywhere) and install:
 ```
-docker build -f deploy/Dockerfile -t meshheal-controlplane:0.7.0 .
+docker build -f deploy/Dockerfile -t meshheal-controlplane:0.7.1 .
 helm install meshheal deploy/helm/meshheal -n meshheal-system --create-namespace --set targetNamespace=<app-namespace>
 kubectl logs -n meshheal-system deploy/meshheal-controlplane -c controller -f
 ```
-With a local k3d cluster, import the image first: `k3d image import meshheal-controlplane:0.7.0 -c <cluster>`.
+With a local k3d cluster, import the image first: `k3d image import meshheal-controlplane:0.7.1 -c <cluster>`.
 `targetNamespace` is required. Prometheus must reach Istio's metrics (default `http://prometheus.istio-system.svc:9090`).
 
 ## Give it a playbook, then read it
@@ -88,9 +88,10 @@ least `rollback_margin_ms` (50) lower, or at least 10 points fewer failures). Ot
 `no_subset_evidence`, `target_subset_no_traffic` or `target_subset_not_better`: rolling back cannot help when every version
 is slow.
 
-Live test on Online Boutique (`REPORT_PHASE6.md`): the per-version evidence was collected correctly, but the per-edge
-scorer blamed the caller (frontend, which calls the bad service several times per page) instead of the bad service, so
-no rollback happened. A live canary rollback has not been demonstrated yet.
+Live test on Online Boutique (`REPORT_PHASE6.md`): with 0.7.0 the per-edge scorer blamed the caller (frontend calls the
+bad service several times per page) and nothing was rolled back; 0.7.1 weights outgoing excess by calls per request,
+and the rerun rolled v2 back 111 s after the bad release, held it while v2 stayed bad and released 5 min after the fix.
+One run; treat it as a demonstration, not a measured success rate.
 
 ## Fleet dashboard (several clusters in one place)
 One `meshheal-fleet` API stores what each cluster's agent pushes (snapshots and decisions; SQLite on a volume, 14 days) and

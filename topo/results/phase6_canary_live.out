@@ -1,0 +1,15 @@
+[10:09:12 +  11s] canary set up: v1 and v2 healthy, VirtualService 50/50
+[10:14:04 + 303s] MeshHeal Boutique release in ACT mode with the canary playbook
+[10:17:56 + 535s] BAD RELEASE: v2 now adds 300ms to every request
+[10:19:56 + 655s] REROUTE  {'weights': {'v1': 100, 'v2': 0}, 'risk': 1.0}
+[10:19:56 + 655s] VirtualService after the reroute  {'weights': {'v1': 100}, 'state_recorded': True}
+[10:24:56 + 956s] 1 probe(s) failed while v2 was still bad
+[10:25:01 + 961s] v2 FIXED (extra latency removed)
+[10:30:20 +1279s] RELEASE  {'weights': {'v1': 50, 'v2': 50}, 'state_left': None}
+[10:31:09 +1328s] cleanup: release back to shadow mode, empty playbook
+[10:31:09 +1328s] cleanup: VirtualService deleted
+[10:31:09 +1328s] cleanup: DestinationRule deleted
+[10:31:09 +1328s] cleanup: v2 deployment deleted
+[10:31:09 +1328s] cleanup: version label removed from v1
+[10:31:14 +1333s] left behind with meshheal-test=canary  {'objects': 'none'}
+wrote topo/results/phase6_canary_live.json

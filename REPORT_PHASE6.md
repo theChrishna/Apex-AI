@@ -39,32 +39,51 @@ Written 2026-11-25. Everything below was run on the k3d cluster `meshheal` unles
   learned baseline, retention, agent resume and failure), 6 frontend layout tests (11-service Online Boutique layout with
   every card in its own cell, cycles, a single service), 4 canary tests (rollback only on per-version evidence).
 
-## Canary rollback, live test (2026-11-25, `topo/canary_test.py`, `topo/results/phase6_canary_live.{json,out}`)
+## Canary rollback, live test (2026-11-25, `topo/canary_test.py`, `topo/results/phase6_canary_*`)
 Setting: productcatalogservice as v1 and v2 behind a 50/50 VirtualService; the Boutique release in ACT mode with one
-confirmed playbook entry (roll productcatalogservice back to v1); at 09:33:05 UTC v2 got EXTRA_LATENCY=300ms.
+confirmed playbook entry (roll productcatalogservice back to v1); then v2 gets EXTRA_LATENCY=300ms, and is fixed after
+5 minutes of probing. Three attempts; the cleanup ran after each (release back to shadow mode with an empty playbook,
+VirtualService, DestinationRule and v2 deleted, version label removed; nothing labelled `meshheal-test=canary` left).
 
-**Result: no rollback. The test failed at detection, not at the rollback logic.**
-- Per-version evidence was there and correct: v1 p95 5 ms, v2 p95 488 ms, both with traffic (collector `subsets`).
-- But the controller blamed **frontend**, not productcatalogservice, in all 34 checks after the bad release, and logged
-  ACTION_BLOCKED `no_healthy_alternative` for frontend 8 times (frontend has no playbook entry). Nothing was written to
-  the cluster by the controller; the safety checks did what they should with a wrong culprit.
-- Why (the same snapshot scored offline with the deployed baseline, before saturation): frontend 175, productcatalogservice
-  48. A page makes several sequential calls to productcatalogservice, so frontend's incoming latency rose to 2321 ms while
-  its single worst outgoing edge was 476 ms; subtracting one edge does not cancel a fan-out of several. Both scores
-  saturate to exactly 1.0, and the tie went to frontend.
-- So the per-edge scorer, which did well on run3 (`REPORT_PHASE4.md`, Result 5), misplaces a slow service that the caller
-  calls several times per request. Possible fixes, NOT built or tested: subtract the caller's outgoing excess weighted by
-  calls per request; rank by unsaturated score to break ties; or, when a service has two versions and one is clearly worse,
-  prefer it as the culprit. Any of these would need a fresh test, not this one.
-- First attempt (`phase6_canary_attempt1_failed_setup.*`) failed in setup: the controller pod was stuck behind a node
-  lost in a Docker Desktop crash. Nothing was injected; the cleanup ran.
-- Cleanup both times: release back to shadow mode with an empty playbook, VirtualService, DestinationRule and v2 deleted,
-  version label removed; nothing labelled `meshheal-test=canary` left.
+**Attempt 1 (09:10, `phase6_canary_attempt1_failed_setup.*`)**: failed in setup. The controller pod was stuck behind a
+node lost in a Docker Desktop crash. Nothing was injected.
 
-What is shown about canary rollback, then: the per-version evidence collection works live, and the rollback decision
-logic is covered by unit tests (4 tests in `test_canary.py`); a live rollback has NOT been demonstrated. The live
-closed loop (reroute, probe, release, restart recovery) remains demonstrated on Bookinfo only (the 2026-10-29 runs in `CLAUDE.md`, and the Phase 5 acting test of
-2026-11-25: REROUTE, expiry, pod restart with RECONCILED, RELEASE back to 34/33/33; that test has no report file of its own).
+**Attempt 2 (09:28, image 0.7.0, `phase6_canary_attempt2_frontend_blamed.*`): no rollback, wrong culprit.**
+- Per-version evidence was there and correct: v1 p95 5 ms, v2 p95 488 ms, both with traffic.
+- The controller blamed **frontend** in all 34 checks after the bad release (09:33:05), and logged ACTION_BLOCKED
+  `no_healthy_alternative` for it 8 times. Nothing was written. Before the fault frontend was normal (page p95 92 ms).
+- Cause (same snapshot scored offline): frontend 175, productcatalogservice 48, before saturation. A page calls
+  productcatalogservice several times in a row, so the page p95 rose to 2321 ms while the worst single outgoing edge was
+  476 ms. Subtracting one edge does not cancel a fan-out. Both saturated to 1.0; the tie went to frontend.
+
+**The fix (image and chart 0.7.1).** The per-edge scorer now subtracts the larger of the worst outgoing excess and the
+sum over outgoing edges of excess x calls per incoming request (capped at 10). Calls made in parallel make this
+over-subtract, which can only lower a caller's score. On the attempt-2 snapshot: frontend 175 -> 0, productcatalogservice
+48 (unchanged). Regression check on the data the design was developed on (NOT fresh evidence): Boutique run2 AP 0.648 ->
+0.693, root cause first 0.821 -> 0.827; Bookinfo and the persistence replays unchanged; run3 unchanged (28/32 caught,
+0 false alarms; `topo/results/*_fanout.*`). Ablation kept (`fanout=False`), 3 new unit tests.
+
+**Attempt 3 (10:09, image 0.7.1, `phase6_canary_live.*`): the rollback worked.**
+
+| UTC | event |
+|---|---|
+| 10:17:56 | bad release: v2 +300 ms |
+| 10:19:47 | REROUTE productcatalogservice: v1 100, v2 0 (111 s after the bad release); reroute state recorded on the VirtualService |
+| 10:21:47 / 10:23:17 | probe 70/30, failed (risk 1.00), back to 100/0 |
+| 10:25:01 | v2 fixed |
+| 10:25:17 / 10:26:47 | probe, failed (risk 0.98): the rate window still held slow requests from before the fix |
+| 10:28:47 / 10:30:18 | probe, passed; RELEASE back to 50/50, state annotation removed (5 min 17 s after the fix) |
+
+A complication, reported as it happened: from 10:12:03, **before** the fault, the whole Boutique slowed down (every
+frontend call 3-5x slower, page p95 95 ms -> 1.7-3.9 s) until about 10:30. The cause was not established (CPU
+contention on the laptop is the likely one; it started when the test switched the release to act mode, which restarts
+the controller pod, and that should not slow the mesh). The controller flagged frontend for it (ACTION_BLOCKED, no
+remedy) before and after the fault: frontend was in fact the most degraded service, so this is not a scoring error, but
+the test did not run on clean traffic. The rollback still went to the right service.
+
+What this shows: one live canary rollback, with probes that held the rollback while v2 was bad and a release after the
+fix. One run, one fault size, one service, partly on degraded traffic; the fix was made after seeing attempt 2 fail,
+and attempt 3 is its only live test. A new fault run would be needed to measure the fix on unseen data.
 
 ## Limits, stated plainly
 - Both "clusters" are namespaces of ONE physical cluster. Transport, tokens and isolation are real; a second physical cluster
