@@ -67,7 +67,7 @@ While paused the controller keeps scoring and logging but writes nothing, **incl
 ## Limits you must know
 - One replica and no leader election: the Deployment uses `Recreate`. Do not scale it up.
 - The container ships the rule, learned-baseline and per-edge scorers (`scorer: rule|baseline|edge`; baseline and edge need a learned baseline file and fall back to the rule on error). The trained GNN needs torch and is not in the image. On the real Online Boutique test the plain per-node MLP beat the GNN and your hand-set rule false-alarmed on 95% of normal snapshots (`topo/results/phase3_boutique_run1.md`), so do not treat the default scorer as production-grade; run in shadow mode and measure.
-- Detection was evaluated on injected delay faults (Bookinfo, Online Boutique) and, in run3, on aborts, CPU starvation and pod crashes on Online Boutique (`topo/results/phase4_fresh_run3.md`). Reroutes were tested live for delay faults only. A reroute needs a service with versions to switch between; applications without versions can be detected and ranked but not remediated.
+- Detection was evaluated on injected delay faults (Bookinfo, Online Boutique) and, in run3, on aborts, CPU starvation and pod crashes on Online Boutique (`topo/results/phase4_fresh_run3.md`, `phase4_fresh_run4.md`; REPORT_PHASE4.md Results 5 and 6). Reroutes were tested live for delay faults only. A reroute needs a service with versions to switch between; applications without versions can be detected and ranked but not remediated.
 - The live closed loop has been demonstrated on Bookinfo only. The snapshot file and audit log live on a scratch volume and are lost when the pod is replaced (the reroute state is not: it is in the cluster).
 
 ## Metrics

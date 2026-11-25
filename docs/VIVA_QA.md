@@ -109,6 +109,26 @@ It removes 215 snapshots from the "normal" data (147 Sep 16 training normals, 68
 **33. What does RELEASE prove, and what does it not?**
 It proves the release logic works on the real cluster: after the cooldown the controller sent 70/15/15, saw the ratings risk below 0.60 with real traffic, and restored 34/33/33 (RELEASE 174 s and 174.9 s after the fault was removed, one run each). It does not prove the probe catches a fault that is still present: in both runs the fault was removed before the probe started. It is also not the recovery measurement; recovery is the latency returning to baseline within about 2 s of the reroute, which happened earlier. [live_demo/result_*_20261029T*.json]
 
+## C. After the submission (phases 1-6)
+
+**34. Does it still need the 4 hardcoded Bookinfo services?**
+No. Discovery reads the services from Istio, and the scorers work on any graph. Tested on Bookinfo (4 services) and Online Boutique (11). [REPORT_PHASE4.md; topo/results/phase3_*.md]
+
+**35. Did the GNN generalise to new topologies?**
+No. In leave-one-topology-family-out on simulated meshes the MLP beat it (AP 0.522 vs 0.329), and on real Online Boutique, trained on simulated data only, the GNN scored AP 0.329 and root cause first 0.591 vs the MLP's 0.540 / 0.783. That is why it was not adopted. [topo/results/phase3_run1.md, phase3_boutique_run1.md]
+
+**36. What replaced the hand-set 100 ms rule?**
+Learned normal ranges from about 20-30 minutes of fault-free traffic, no labels, no training: per service, then per caller -> callee edge (latency and failure share). The rule false-alarmed on 92% of normal Boutique snapshots. On run3 (32 fresh episodes of four fault types, scorers frozen beforehand) the per-edge scorer caught 28 of 32 in an offline replay and the deployed controller caught 29 of 32 live, with no false alarm in 0.69 h and 0.30 h of fault-free time. Run4 (40 new episodes, image 0.7.1): 29 of 40 offline, 34 of 40 live, one false-alarm onset in 0.80 h live; ranking was worse (another service alarmed first in 14 of 40 episodes live, 6 of 32 in run3). [REPORT_PHASE4.md Results 5 and 6]
+
+**37. What are the weak spots of the per-edge scorer?**
+CPU starvation is caught but ranked poorly (root cause first 0.25 per snapshot): the starved service and its callers slow down together. Delay detection fell from 10/10 (run2) to 6/8 (run3), cause not established. "0 false alarms" in 0.69 h only bounds the rate at about 4 per hour. [REPORT_PHASE4.md Result 5]
+
+**38. What happened in the canary rollback test?**
+Three attempts. The first failed in setup. The second blamed frontend, because a page calls productcatalogservice several times per request and subtracting one slow edge did not cancel that. The fix (0.7.1) weights outgoing excess by calls per request. The third attempt rolled productcatalogservice back to v1 111 s after the bad release, held it while v2 was bad, and released 5 min 17 s after the fix. One run, partly on degraded traffic. [REPORT_PHASE6.md]
+
+**39. Is the fleet multi-cluster?**
+The transport, tokens and isolation are real, but both "clusters" are namespaces of one physical cluster. [REPORT_PHASE6.md, Limits]
+
 ## Things we must not claim
 
 - "The GNN beats the baseline / the MLP." It ties the baseline (0.928 vs 0.930) and the MLP is better (0.983).
@@ -124,3 +144,7 @@ It proves the release logic works on the real cluster: after the cooldown the co
 - "Detects 50 ms faults." Probably bucket-edge effects, untested for sensitivity.
 - "Production-ready" or "secure." No RBAC, no restart-safe state, and the live closed-loop validation is one run per scenario on one testbed.
 - Numbers that are not in a file in this repo (for example the "+112%" figure in `meshheal_results_v2.md`, an older results file): do not quote it; CLAUDE.md bans marketing figures like it.
+- "The per-edge scorer has no false alarms." 0 in under an hour of fault-free time bounds the rate at about 4 per hour, no lower.
+- "The fan-out fix improved detection." Run4 was worse than run3; the cause was not tested.
+- "Canary rollback works reliably." It worked once (attempt 3), after the fix made because attempt 2 failed.
+- "Multi-cluster fleet." Two namespaces of one cluster.

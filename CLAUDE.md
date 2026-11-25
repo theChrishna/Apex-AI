@@ -16,7 +16,9 @@ detect silent degradation / cascading failures in microservices early, then rero
 - After a Docker Desktop crash the k3d containers can come back with different IPs; a k3s node whose Node object still has
   the old InternalIP crash-loops ("failed to find interface with specified node ip"). Seen 2026-11-25 on agent-1, which
   was then stopped; the cluster ran on server + agent-0. The clean fix (deleting that Node object so it re-registers)
-  is a cluster write and needs the user's approval.
+  is a cluster write and needs the user's approval. A re-registered node has an empty image cache, and pulling the
+  Boutique images from us-central1-docker.pkg.dev failed there once (run4); `k3d image import -c meshheal` of the
+  host's copies avoids it.
 - Prometheus (9090), productpage (9080) and the fleet API (8780) need port-forwards. Fleet tokens live OUTSIDE the repo
   (`C:\Apex AI\fleet-secrets`); never commit tokens.
 
@@ -52,7 +54,7 @@ Loop every 15 s: read newest snapshot (reject stale > 45 s / NaN / missing nodes
 - **Live closed-loop runs (2026-10-29, `live_demo/run_live.py`, ratings 150 ms fault, one run per scenario, no rates or averages):** A (GNN scores, `result_A_20261029T053627Z.json`): REROUTE of ratings 78.2 s after the fault, median latency 0.172 s faulted to 0.023 s, back to baseline within about 2 s of the reroute, probe 70/15/15, RELEASE 174 s after the fault was removed, 21 SCORED all primary. B (kill file, rule fallback scores, `result_B_20261029T064550Z.json`): REROUTE 63.7 s, 0.182 s to 0.024 s, RELEASE 174.9 s after fault removal, 19 SCORED all fallback. `live_demo/test_patch.py --yes` passed on 2026-10-28.
 - Wording: detection is "about 60 to 80 s, set by the persistence rule". Do NOT say the fallback is faster than the GNN (A acted on the 4th high-risk cycle, B on the 3rd; the 14 s gap is unexplained). Do NOT quote 0.3 s / 1.8 s as recovery times (the script records the first of three consecutive fast samples 2 s apart). RELEASE shows the release logic works; the fault was removed before the probe started in both runs, so it does not show the probe catches a persisting fault.
 - v3 data check (`REPORT_V3.md`): 215 snapshots excluded; baseline and culprit rule unchanged; GNN AP 0.928 to 0.898, MLP 0.983 to 0.955, about the size of seed noise; holdout FPR fell (baseline 0.140 to 0.039, GNN 0.128 to 0.031); v3 policy numbers are not comparable (split problem).
-- Run: `python -m pytest -q` (238 Python tests across `meshheal_controlplane/`, `topo/tests` and `dashboard/tests`, no cluster; `npm test` in Frontend_v3) | `python -m controlplane.run --snapshots snapshots.jsonl --replay` | shadow mode is the DEFAULT since Phase 5 (reads the cluster, never writes; `--dry-run` means the same) | `--act` = acting. See `docs/OPERATIONS.md`.
+- Run: `python -m pytest -q` (249 Python tests across `meshheal_controlplane/`, `topo/tests` and `dashboard/tests`, no cluster; `npm test` in Frontend_v3) | `python -m controlplane.run --snapshots snapshots.jsonl --replay` | shadow mode is the DEFAULT since Phase 5 (reads the cluster, never writes; `--dry-run` means the same) | `--act` = acting. See `docs/OPERATIONS.md`.
 
 ## Rules for working here
 - NEVER run kubectl write commands (apply/patch/delete) without the user's approval; always propose them first.

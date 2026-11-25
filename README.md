@@ -30,3 +30,15 @@ Replay without a cluster: `python Frontend_v3/api/meshheal_api.py --mode replay 
 Needs Docker, k3d, kubectl and istioctl; see `live_demo/README.md` and `docs/DEMO_SCRIPT.md`.
 On Windows/WSL2 with cgroup v1 use a k3s image up to v1.33 (`k3d cluster create meshheal --image rancher/k3s:v1.33.5-k3s1 ...`); k3s v1.35 refuses to start there.
 Never run kubectl write commands against a cluster you care about without reading the command first. The controller is in shadow mode (reads only) unless you pass `--act`. Deployment, the pause switch and what it can write are in `docs/OPERATIONS.md`.
+
+## After the course submission: phases 1-6
+| phase | what | where the evidence is |
+|---|---|---|
+| 1 | reproducible setup (`scripts/setup.*`), CI | `.github/workflows/` |
+| 2 | generic service discovery, YAML playbooks, safe VirtualService patching | `docs/OPERATIONS.md` |
+| 3 | topology-agnostic graphs, simulator, leave-one-topology-out evaluation (GNN not adopted: the MLP beat it) | `topo/results/phase3_*.md` |
+| 4 | learned baselines per service and per edge, persistence replay, four fault types on Online Boutique | `REPORT_PHASE4.md` |
+| 5 | shadow mode by default, reroute state kept on the VirtualService, restart recovery, image and Helm chart | `docs/OPERATIONS.md` |
+| 6 | fleet API and dashboard page, per-cluster agents, canary rollback, alert rules | `REPORT_PHASE6.md` |
+
+Still a prototype: two applications on one laptop cluster, injected faults, load-generated traffic. The limits are listed at the end of each report.
