@@ -33,6 +33,7 @@ class Config:
     max_reroute_s: float = 3600.0       # a reroute older than this is released automatically; 0 = never
     control_configmap: str = "meshheal-control"   # ConfigMap in the namespace; data paused: "true" freezes ALL writes
     state_annotation: str = "meshheal.io/state"   # VirtualService annotation that records an active reroute
+    rollback_margin_ms: float = 50.0     # canary rollback: the bad version must be at least this much slower (and 2x)
     baseline_path: str = None           # learned BaselineScorer YAML, used with --scorer baseline
     audit_stdout: bool = False          # also print every audit event as one JSON line (what a container needs for kubectl logs)
 

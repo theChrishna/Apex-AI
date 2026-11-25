@@ -1,0 +1,12 @@
+[09:28:12 +  21s] canary set up: v1 and v2 healthy, VirtualService 50/50
+[09:32:01 + 251s] MeshHeal Boutique release in ACT mode with the canary playbook
+[09:33:05 + 315s] BAD RELEASE: v2 now adds 300ms to every request
+[09:41:08 + 798s] NO REROUTE within 8 minutes  {'blocked': [{'ts': '2026-11-25T09:38:47.313070+00:00', 'event': 'ACTION_BLOCKED', 'dry_run': False, 'node': 'frontend', 'risk': 1.0, 'reason': 'no_healthy_alternative'}, {'ts': '2026-11-25T09:39:47.361674+00:00', 'event': 'ACTION_BLOCKED', 'dry_run': False, 'node': 'frontend', 'risk': 1.0, 'reason': 'no_healthy_alternative'}, {'ts': '2026-11-25T09:40:47.395750+00:00', 'event': 'ACTION_BLOCKED', 'dry_run': False, 'node': 'frontend', 'risk': 1.0, 'reason': 'no_healthy_alternative'}]}
+[09:41:14 + 804s] v2 FIXED (extra latency removed)
+[09:42:03 + 853s] cleanup: release back to shadow mode, empty playbook
+[09:42:03 + 853s] cleanup: VirtualService deleted
+[09:42:03 + 853s] cleanup: DestinationRule deleted
+[09:42:03 + 853s] cleanup: v2 deployment deleted
+[09:42:04 + 853s] cleanup: version label removed from v1
+[09:42:08 + 858s] left behind with meshheal-test=canary  {'objects': 'none'}
+wrote topo/results/phase6_canary_live.json

@@ -1,0 +1,24 @@
+[09:10:26 +  10s] canary set up: v1 and v2 healthy, VirtualService 50/50
+[09:19:30 + 554s] !! cleanup step failed: release back to shadow mode, empty playbook: kubectl rollout status deployment/meshheal-boutique-controlplane failed: error: timed out waiting for the condition  DO IT BY HAND
+[09:19:30 + 554s] cleanup: VirtualService deleted
+[09:19:30 + 554s] cleanup: DestinationRule deleted
+[09:19:30 + 554s] cleanup: v2 deployment deleted
+[09:19:31 + 555s] cleanup: version label removed from v1
+[09:19:35 + 559s] left behind with meshheal-test=canary  {'objects': 'none'}
+wrote topo/results/phase6_canary_live.json
+Traceback (most recent call last):
+  File "C:\Users\mugiw\AppData\Local\Programs\Python\Python310\lib\runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "C:\Users\mugiw\AppData\Local\Programs\Python\Python310\lib\runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "C:\Apex AI\Apex-AI\topo\canary_test.py", line 231, in <module>
+    main()
+  File "C:\Apex AI\Apex-AI\topo\canary_test.py", line 192, in main
+    helm_release("act", a.playbook_file)
+  File "C:\Apex AI\Apex-AI\topo\canary_test.py", line 134, in helm_release
+    k("rollout", "status", f"deployment/{REL}-controlplane", "-n", REL_NS, "--timeout=180s")
+  File "C:\Apex AI\Apex-AI\topo\canary_test.py", line 71, in k
+    return run("kubectl", *args, **kw)
+  File "C:\Apex AI\Apex-AI\topo\canary_test.py", line 66, in run
+    raise RuntimeError(f"{' '.join(cmd[:4])} failed: {r.stderr.strip()[:300]}")
+RuntimeError: kubectl rollout status deployment/meshheal-boutique-controlplane failed: error: timed out waiting for the condition

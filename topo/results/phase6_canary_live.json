@@ -1,0 +1,154 @@
+{
+ "latency": "300ms",
+ "reroute": null,
+ "events": [
+  {
+   "ts": "2026-11-25T09:33:47.083117+00:00",
+   "event": "ACTION_BLOCKED",
+   "dry_run": false,
+   "node": "frontend",
+   "risk": 1.0,
+   "reason": "no_healthy_alternative"
+  },
+  {
+   "ts": "2026-11-25T09:34:47.137033+00:00",
+   "event": "ACTION_BLOCKED",
+   "dry_run": false,
+   "node": "frontend",
+   "risk": 1.0,
+   "reason": "no_healthy_alternative"
+  },
+  {
+   "ts": "2026-11-25T09:35:47.181260+00:00",
+   "event": "ACTION_BLOCKED",
+   "dry_run": false,
+   "node": "frontend",
+   "risk": 1.0,
+   "reason": "no_healthy_alternative"
+  },
+  {
+   "ts": "2026-11-25T09:36:47.223340+00:00",
+   "event": "ACTION_BLOCKED",
+   "dry_run": false,
+   "node": "frontend",
+   "risk": 1.0,
+   "reason": "no_healthy_alternative"
+  },
+  {
+   "ts": "2026-11-25T09:37:47.265310+00:00",
+   "event": "ACTION_BLOCKED",
+   "dry_run": false,
+   "node": "frontend",
+   "risk": 1.0,
+   "reason": "no_healthy_alternative"
+  },
+  {
+   "ts": "2026-11-25T09:38:47.313070+00:00",
+   "event": "ACTION_BLOCKED",
+   "dry_run": false,
+   "node": "frontend",
+   "risk": 1.0,
+   "reason": "no_healthy_alternative"
+  },
+  {
+   "ts": "2026-11-25T09:39:47.361674+00:00",
+   "event": "ACTION_BLOCKED",
+   "dry_run": false,
+   "node": "frontend",
+   "risk": 1.0,
+   "reason": "no_healthy_alternative"
+  },
+  {
+   "ts": "2026-11-25T09:40:47.395750+00:00",
+   "event": "ACTION_BLOCKED",
+   "dry_run": false,
+   "node": "frontend",
+   "risk": 1.0,
+   "reason": "no_healthy_alternative"
+  }
+ ],
+ "timeline": [
+  {
+   "utc": "09:28:12",
+   "t_s": 21,
+   "msg": "canary set up: v1 and v2 healthy, VirtualService 50/50"
+  },
+  {
+   "utc": "09:32:01",
+   "t_s": 251,
+   "msg": "MeshHeal Boutique release in ACT mode with the canary playbook"
+  },
+  {
+   "utc": "09:33:05",
+   "t_s": 315,
+   "msg": "BAD RELEASE: v2 now adds 300ms to every request"
+  },
+  {
+   "utc": "09:41:08",
+   "t_s": 798,
+   "msg": "NO REROUTE within 8 minutes",
+   "blocked": [
+    {
+     "ts": "2026-11-25T09:38:47.313070+00:00",
+     "event": "ACTION_BLOCKED",
+     "dry_run": false,
+     "node": "frontend",
+     "risk": 1.0,
+     "reason": "no_healthy_alternative"
+    },
+    {
+     "ts": "2026-11-25T09:39:47.361674+00:00",
+     "event": "ACTION_BLOCKED",
+     "dry_run": false,
+     "node": "frontend",
+     "risk": 1.0,
+     "reason": "no_healthy_alternative"
+    },
+    {
+     "ts": "2026-11-25T09:40:47.395750+00:00",
+     "event": "ACTION_BLOCKED",
+     "dry_run": false,
+     "node": "frontend",
+     "risk": 1.0,
+     "reason": "no_healthy_alternative"
+    }
+   ]
+  },
+  {
+   "utc": "09:41:14",
+   "t_s": 804,
+   "msg": "v2 FIXED (extra latency removed)"
+  },
+  {
+   "utc": "09:42:03",
+   "t_s": 853,
+   "msg": "cleanup: release back to shadow mode, empty playbook"
+  },
+  {
+   "utc": "09:42:03",
+   "t_s": 853,
+   "msg": "cleanup: VirtualService deleted"
+  },
+  {
+   "utc": "09:42:03",
+   "t_s": 853,
+   "msg": "cleanup: DestinationRule deleted"
+  },
+  {
+   "utc": "09:42:03",
+   "t_s": 853,
+   "msg": "cleanup: v2 deployment deleted"
+  },
+  {
+   "utc": "09:42:04",
+   "t_s": 853,
+   "msg": "cleanup: version label removed from v1"
+  },
+  {
+   "utc": "09:42:08",
+   "t_s": 858,
+   "msg": "left behind with meshheal-test=canary",
+   "objects": "none"
+  }
+ ]
+}

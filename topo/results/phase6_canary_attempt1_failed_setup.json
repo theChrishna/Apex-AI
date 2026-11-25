@@ -1,0 +1,41 @@
+{
+ "latency": "300ms",
+ "timeline": [
+  {
+   "utc": "09:10:26",
+   "t_s": 10,
+   "msg": "canary set up: v1 and v2 healthy, VirtualService 50/50"
+  },
+  {
+   "utc": "09:19:30",
+   "t_s": 554,
+   "msg": "!! cleanup step failed: release back to shadow mode, empty playbook: kubectl rollout status deployment/meshheal-boutique-controlplane failed: error: timed out waiting for the condition  DO IT BY HAND"
+  },
+  {
+   "utc": "09:19:30",
+   "t_s": 554,
+   "msg": "cleanup: VirtualService deleted"
+  },
+  {
+   "utc": "09:19:30",
+   "t_s": 554,
+   "msg": "cleanup: DestinationRule deleted"
+  },
+  {
+   "utc": "09:19:30",
+   "t_s": 554,
+   "msg": "cleanup: v2 deployment deleted"
+  },
+  {
+   "utc": "09:19:31",
+   "t_s": 555,
+   "msg": "cleanup: version label removed from v1"
+  },
+  {
+   "utc": "09:19:35",
+   "t_s": 559,
+   "msg": "left behind with meshheal-test=canary",
+   "objects": "none"
+  }
+ ]
+}

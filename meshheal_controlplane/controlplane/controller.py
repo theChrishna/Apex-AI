@@ -15,6 +15,32 @@ from .snapshot import BadSnapshot, node_stats, parse_ts
 NORMAL, REROUTED, PROBING = "NORMAL", "REROUTED", "PROBING"
 
 
+def subset_rollback_block(subsets, service, target, cfg):
+    """None if a rollback of `service` to version `target` is supported by per-version evidence, else a block reason.
+
+    Evidence: the target version has traffic and is clearly better than at least one other version - its p95 is less
+    than half of the other's and at least rollback_margin_ms lower, or its failed share is at least 0.10 lower.
+    """
+    vers = (subsets or {}).get(service)
+    if not vers:
+        return "no_subset_evidence"            # the snapshot has no per-version stats for this service
+    t = vers.get(target)
+    if not t or (t.get("rate") or 0.0) < cfg.min_evidence_rate:
+        return "target_subset_no_traffic"
+    def num(x):
+        return x if isinstance(x, (int, float)) and x == x else None              # None for missing or NaN
+    tp = num(t.get("p95"))
+    for ver, o in vers.items():
+        if ver == target or (o.get("rate") or 0.0) < cfg.min_evidence_rate:
+            continue
+        op = num(o.get("p95"))
+        slower = tp is not None and op is not None and op > 2 * tp and op - tp >= cfg.rollback_margin_ms
+        failing = (o.get("err") or 0.0) - (t.get("err") or 0.0) >= 0.10
+        if slower or failing:
+            return None
+    return "target_subset_not_better"
+
+
 class Controller:
     def __init__(self, cfg, scorer, client, audit, clock=None, dry_run=False, playbook=None):
         self.cfg, self.scorer, self.client, self.audit = cfg, scorer, client, audit
@@ -63,7 +89,7 @@ class Controller:
             self._reroute_times.popleft()
         return len(self._reroute_times) >= limit
 
-    def _safety(self, node, plan, scores, now):
+    def _safety(self, node, plan, scores, now, snap_subsets=None):
         """Return a block reason or None (FR-3.3)."""
         if plan is None:
             return "no_healthy_alternative"
@@ -77,7 +103,11 @@ class Controller:
             return "cooldown"
         if not self.client.subset_ready(plan.virtual_service, plan.target_subset):
             return "target_pod_not_ready"
-        if plan.virtual_service == node or node in self.playbook.deps_of(plan.virtual_service, plan.target_subset):
+        if plan.virtual_service == node:
+            # Canary rollback: move the culprit's OWN traffic to another version of it. Only safe when per-version
+            # evidence shows that version healthy and another one degraded; the service-level score cannot tell.
+            return subset_rollback_block(snap_subsets, node, plan.target_subset, self.cfg)
+        if node in self.playbook.deps_of(plan.virtual_service, plan.target_subset):
             return "circular_route"   # target path depends on the faulty node
         if scores.get(plan.virtual_service, 0.0) >= self.cfg.act_threshold:
             return "alternative_unhealthy"
@@ -189,7 +219,7 @@ class Controller:
                                 culprit=culprit, risk=round(scores[node], 3))
         elif node and node not in self.active:
             plan = self.playbook.reroutes.get(node)
-            reason = self._safety(node, plan, scores, now)
+            reason = self._safety(node, plan, scores, now, getattr(snap, "subsets", None))
             if reason:
                 self._block(node, reason, scores[node], now)
             else:
