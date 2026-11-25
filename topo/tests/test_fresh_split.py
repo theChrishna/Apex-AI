@@ -41,3 +41,11 @@ def test_excluded_windows_are_dropped_everywhere(tmp_path):
     kept = [datetime.fromisoformat(r["timestamp"]) for r in learn + recs]
     assert kept and not any(gap[0] <= t <= gap[1] for t in kept)
     assert any(t > gap[1] for t in kept)                                     # data after the window is still used
+
+
+def test_no_fanout_ablation_scorer_turns_fanout_off(tmp_path):
+    from topo.fresh_test import _NoFanoutEdgeScorer
+    assert _NoFanoutEdgeScorer().fanout is False
+    p = tmp_path / "b.yaml"
+    p.write_text("edges: {}\n", encoding="utf-8")
+    assert _NoFanoutEdgeScorer.from_file(str(p)).fanout is False

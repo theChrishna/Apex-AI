@@ -228,10 +228,14 @@ What this says, plainly:
 - The per-edge scorer is still far ahead of the alternatives on new data, and the only one that handles aborts and
   crashes. Its false alarms stay low (one onset in about 1.4 h of fault-free time across both measurements).
 - Run4 is **worse than run3** on detection and clearly worse on ranking (another service alarmed first live: 6 of 32 -> 14 of 40).
-  Run4 does not show that the fan-out change helped on unseen data. The fix was made for one canary case; on
-  run3 it changed nothing. Whether it causes the drop was not tested (run4 was not re-scored with `fanout=False`).
-  The two runs also differ in services, order and learning data (run4 learned from about 17 min, run3 from 27 min),
-  so the drop cannot be assigned to one cause.
+  **The fan-out change is not the cause.** Run4 re-scored offline with fan-out switched off (`--no-fanout`,
+  `phase4_fresh_run4_nofanout.md`, same learning data and exclusions) gives the same 29/40 caught and AP 0.398 vs
+  0.403. Exactly one episode differs: a 200 ms delay on currencyservice (episode 35), where with fan-out the right
+  service alarmed first after 67 s and without it checkoutservice alarmed first (right service at 128 s). On run3
+  the only change was AP 0.512 -> 0.513; every episode was the same. So on unseen data the fix is neutral to slightly helpful, and it fixed the
+  canary case it was made for. The drop from run3 comes from something else: the two runs differ in which services
+  got which fault, in order, and in learning data (run4 learned from about 17 min, run3 from 27 min); which of these
+  matters was not tested.
 - CPU starvation is still ranked poorly per snapshot (0.18); delay detection is 6/10 offline, about as in run3 (6/8).
 - 10 episodes per type and under an hour of fault-free time per measurement: the per-type rates move by 10-20 points
   with one episode, so differences of one or two episodes are noise.
@@ -244,4 +248,4 @@ What this says, plainly:
   Another service often alarms first (live: 6 of 32 episodes in run3, 14 of 40 in run4).
 - Does not show: production readiness. Two real applications on one laptop cluster, injected faults, load-generated
   traffic, under an hour of fault-free time per measurement, 8 episodes per fault type. Delay detection dropped between
-  run2 and run3 and the reason is not established. Run4 did not show that the 0.7.1 fan-out fix helps on unseen data. Remediation for Boutique was not tested (no playbook).
+  run2 and run3 and the reason is not established. On run4 the 0.7.1 fan-out fix changed one episode of 40 (for the better); it is not the cause of the drop. Remediation for Boutique was not tested (no playbook).

@@ -104,6 +104,13 @@ def by_type(persist, eps):
     return out
 
 
+class _NoFanoutEdgeScorer(ev.EdgeScorer):
+    """EdgeScorer with fan-out weighting switched off, for the --no-fanout ablation."""
+    def __init__(self, *args, **kw):
+        kw["fanout"] = False
+        super().__init__(*args, **kw)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--tag", required=True)
@@ -114,7 +121,11 @@ def main(argv=None):
     ap.add_argument("--exclude", nargs=2, action="append", default=[], metavar=("FROM", "TO"),
                     help="drop snapshots in this ISO time window (UTC); repeatable")
     ap.add_argument("--mlp", action="store_true", help="also score the MLP trained on simulated data (5 seeds; CPU heavy)")
+    ap.add_argument("--no-fanout", action="store_true",
+                    help="ablation: score the per-edge scorer without fan-out weighting (the 0.7.0 behaviour)")
     a = ap.parse_args(argv)
+    if a.no_fanout:
+        ev.EdgeScorer = _NoFanoutEdgeScorer
     out_md = os.path.join(ROOT, "topo", "results", a.tag + ".md")
     if os.path.exists(out_md):
         raise SystemExit(f"refusing to overwrite {out_md}")
@@ -140,6 +151,7 @@ def main(argv=None):
              f"Scorer designs were frozen before this run. Learned baselines come ONLY from the first {a.learn_share:.0%} of the "
              f"fault-free snapshots before the run ({len(learn)} snapshots); false alarms are measured on the other {n_normal} "
              f"fault-free snapshots. {len(eps)} episodes: " + ", ".join(f"{k} {v}" for k, v in collections.Counter(e.get('type', 'delay') for e in eps).items()) + ".", "",
+             *([f"Ablation: the per-edge scorer runs WITHOUT fan-out weighting (fanout=False, the 0.7.0 behaviour).", ""] if a.no_fanout else []),
              "## What the controller would do (persistence rule: 3 of 4 checks above 0.85)", "",
              "| scorer | fault type | caught | wrong service first | median detection delay |", "|---|---|---|---|---|"]
     for name, t in types.items():
