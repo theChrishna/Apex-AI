@@ -1,0 +1,26 @@
+# MeshHeal fleet API + dashboard. Build from the repository root:
+#   docker build -f deploy/Dockerfile.fleet -t meshheal-fleet:0.7.0 .
+# Stage 1 builds the dashboard (Frontend_v3); stage 2 is a small Python image serving it and the API.
+FROM node:22-slim AS ui
+WORKDIR /ui
+COPY Frontend_v3/package.json Frontend_v3/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY Frontend_v3/ ./
+# not `npm run build`: its prebuild step regenerates src/generated/facts.json from result files elsewhere in the repo,
+# which are not in this stage. The committed facts.json is used as is.
+RUN npx tsc -b && npx vite build
+
+FROM python:3.10-slim
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
+WORKDIR /app
+COPY deploy/requirements-runtime.txt /tmp/requirements.txt
+RUN pip install -r /tmp/requirements.txt && rm /tmp/requirements.txt
+# the API computes risk with the control plane's own parser and scorers
+COPY meshheal_controlplane/controlplane /app/meshheal_controlplane/controlplane
+COPY dashboard /app/dashboard
+COPY --from=ui /ui/dist /app/static
+RUN rm -rf /app/dashboard/tests && useradd --uid 10001 --no-create-home --shell /usr/sbin/nologin meshheal
+USER 10001
+EXPOSE 8780
+ENTRYPOINT ["python", "-m", "dashboard.server", "--host", "0.0.0.0", "--static", "/app/static"]
+CMD ["--db", "/data/fleet.db", "--tokens", "/etc/meshheal-fleet/tokens.json"]

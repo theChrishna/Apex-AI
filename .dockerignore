@@ -1,0 +1,16 @@
+# Keep build contexts small and platform-clean: dependencies are installed inside the images.
+**/node_modules
+**/dist
+.venv
+**/__pycache__
+**/.pytest_cache
+.git
+live_run
+topo/*.jsonl
+topo/*.log
+topo/results
+models
+*.pt
+*.zip
+*.jsonl
+figures

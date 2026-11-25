@@ -1,0 +1,22 @@
+image:
+  repository: meshheal-fleet
+  tag: "0.7.0"
+  pullPolicy: IfNotPresent
+
+# REQUIRED: an existing Secret holding tokens.json (hashes only), made with
+#   python -m dashboard.tokens --file tokens.json add-read ;  ... add-ingest <cluster>
+#   kubectl create secret generic meshheal-fleet-tokens --from-file=tokens.json -n <namespace>
+tokensSecret: ""
+
+# Optional learned baseline per cluster name, used for the risk the dashboard shows:
+#   --set-file baselines.boutique=baseline.yaml
+baselines: {}
+
+retentionDays: 14
+storage:
+  size: 1Gi
+  storageClass: ""        # empty = the cluster default (k3d: local-path)
+
+resources:
+  requests: {cpu: 50m, memory: 96Mi}
+  limits: {cpu: 500m, memory: 256Mi}

@@ -43,8 +43,10 @@ spec:
             - --snapshots=/data/live_snapshots.jsonl     # not snapshots.jsonl: the collector refuses that name (uploaded data)
             - --metrics-port={{ $port }}
             {{- if .Values.baseline }}
-            - --scorer=baseline
+            - --scorer={{ include "meshheal.scorer" . }}
             - --baseline=/etc/meshheal/baseline.yaml
+            {{- else if .Values.scorer }}
+            {{- fail "scorer baseline/edge needs a learned baseline: --set-file baseline=baseline.yaml" }}
             {{- end }}
             {{- if eq $mode "act" }}
             - --act
@@ -86,7 +88,30 @@ spec:
           volumeMounts:
             - {name: data, mountPath: /data}
             - {name: tmp, mountPath: /tmp}
+        {{- if .Values.fleet.url }}
+        - name: agent
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - dashboard.agent
+            - --url={{ .Values.fleet.url }}
+            - --cluster={{ default $target .Values.fleet.cluster }}
+            - --token-file=/var/run/meshheal-fleet/token
+            - --snapshots=/data/live_snapshots.jsonl
+            - --audit=/data/audit.jsonl
+            - --state=/data/agent-state.json
+          resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 100m, memory: 96Mi}}
+          securityContext: *container-security
+          volumeMounts:
+            - {name: data, mountPath: /data}
+            - {name: tmp, mountPath: /tmp}
+            - {name: fleet-token, mountPath: /var/run/meshheal-fleet, readOnly: true}
+        {{- end }}
       volumes:
+        {{- if .Values.fleet.url }}
+        - name: fleet-token
+          secret: {secretName: {{ required "fleet.tokenSecret is required when fleet.url is set" .Values.fleet.tokenSecret }}, items: [{key: token, path: token}]}
+        {{- end }}
         - name: data
           emptyDir:
             sizeLimit: {{ .Values.dataVolumeSizeLimit }}

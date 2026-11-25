@@ -396,3 +396,21 @@ ul.plain b { color: var(--text); }
 
 /* reduced motion: no animation and no transition at all */
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } html { scroll-behavior: auto; } }
+
+/* ---- Fleet (Phase 6) ---- */
+.fleet .page-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.cluster-list { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0 16px; }
+.cluster-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 14px; border: 1px solid var(--axis);
+  background: var(--surface); color: inherit; cursor: pointer; font: inherit; }
+.cluster-btn.on { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent); }
+.cluster-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.fleet-graph { overflow-x: auto; }
+.fleet-graph svg { width: 100%; height: auto; }
+.token-form { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 10px; }
+.token-form input { flex: 1 1 280px; min-width: 0; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--axis); background: var(--surface); color: inherit; font: inherit; }
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
+.tbl th, .tbl td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--grid); }
+.events { list-style: none; margin: 0; padding: 0; max-height: 320px; overflow: auto; font-size: 14px; }
+.events li { padding: 5px 0; border-bottom: 1px solid var(--grid); }
+

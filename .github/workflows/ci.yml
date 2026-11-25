@@ -26,6 +26,8 @@ jobs:
         run: python -m pytest -q test_build_dataset_v3.py
       - name: Phase 3 tests (topology builder, simulator, evaluation harness)
         run: python -m pytest -q topo/tests
+      - name: Fleet API tests (auth, storage, agent, any mesh)
+        run: python -m pytest -q dashboard/tests
   deploy:
     runs-on: ubuntu-latest
     steps:
@@ -37,6 +39,11 @@ jobs:
           docker run --rm meshheal-controlplane:ci controlplane.run --help | grep -e '--act'
           test "$(docker run --rm --entrypoint id meshheal-controlplane:ci -u)" = "10001"
           docker run --rm --entrypoint python meshheal-controlplane:ci -c "import sys, controlplane.run, controlplane.collect, controlplane.learn_baseline; assert 'torch' not in sys.modules"
+      - name: Build the fleet image (API + dashboard; not pushed)
+        run: |
+          docker build -f deploy/Dockerfile.fleet -t meshheal-fleet:ci .
+          test "$(docker run --rm --entrypoint id meshheal-fleet:ci -u)" = "10001"
+          docker run --rm --entrypoint sh meshheal-fleet:ci -c "test -f /app/static/index.html"
       - uses: azure/setup-helm@v4
         with:
           version: v3.16.0
@@ -58,6 +65,13 @@ jobs:
           helm template t deploy/helm/meshheal --set targetNamespace=demo --set-file baseline=b.yaml > base.yaml
           grep -q -e '--scorer=baseline' base.yaml
           grep -q 'baseline.yaml: |' base.yaml
+          if grep -q 'dashboard.agent' shadow.yaml; then echo "the agent must be opt-in"; exit 1; fi
+          helm template t deploy/helm/meshheal --set targetNamespace=demo --set fleet.url=http://f:8780 --set fleet.tokenSecret=s | grep -q 'dashboard.agent'
+          if helm template t deploy/helm/meshheal --set targetNamespace=demo --set fleet.url=http://f:8780 > /dev/null 2>&1; then echo "fleet.tokenSecret must be required"; exit 1; fi
+          helm lint deploy/helm/meshheal-fleet --set tokensSecret=s
+          if helm template f deploy/helm/meshheal-fleet > /dev/null 2>&1; then echo "tokensSecret must be required"; exit 1; fi
+          helm template f deploy/helm/meshheal-fleet --set tokensSecret=s --set-file baselines.demo=b.yaml | grep -q -e '--baseline=demo='
+          helm template f deploy/helm/meshheal-fleet --set tokensSecret=s | grep -q 'automountServiceAccountToken: false'
   frontend:
     runs-on: ubuntu-latest
     strategy:
@@ -73,7 +87,7 @@ jobs:
         with:
           node-version: 22
       - run: npm ci --no-audit --no-fund
-      - name: Unit tests (only Frontend has any)
-        if: matrix.dir == 'Frontend'
+      - name: Unit tests (Frontend and Frontend_v3)
+        if: matrix.dir != 'Frontend_v2'
         run: npm test
       - run: npm run build

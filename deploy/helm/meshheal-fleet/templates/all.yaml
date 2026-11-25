@@ -1,0 +1,92 @@
+{{- $name := .Release.Name -}}
+{{- $secret := required "set tokensSecret to an existing Secret holding tokens.json (see values.yaml)" .Values.tokensSecret -}}
+{{- if .Values.baselines }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $name }}-baselines
+  namespace: {{ .Release.Namespace }}
+data:
+  {{- range $cluster, $body := .Values.baselines }}
+  {{ $cluster }}.yaml: |
+    {{- $body | nindent 4 }}
+  {{- end }}
+---
+{{- end }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $name }}-data
+  namespace: {{ .Release.Namespace }}
+spec:
+  accessModes: ["ReadWriteOnce"]
+  {{- with .Values.storage.storageClass }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.storage.size }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+  labels: {app.kubernetes.io/name: meshheal-fleet, app.kubernetes.io/instance: {{ .Release.Name }}}
+spec:
+  replicas: 1                 # one writer to the SQLite file
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app.kubernetes.io/name: meshheal-fleet, app.kubernetes.io/instance: {{ .Release.Name }}}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: meshheal-fleet, app.kubernetes.io/instance: {{ .Release.Name }}}
+      annotations:
+        checksum/baselines: {{ toJson .Values.baselines | sha256sum }}
+    spec:
+      automountServiceAccountToken: false     # it never talks to the Kubernetes API
+      securityContext: {runAsNonRoot: true, runAsUser: 10001, runAsGroup: 10001, fsGroup: 10001, seccompProfile: {type: RuntimeDefault}}
+      containers:
+        - name: api
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --db=/data/fleet.db
+            - --tokens=/etc/meshheal-fleet/tokens.json
+            - --port=8780
+            - --retention-days={{ .Values.retentionDays }}
+            {{- range $cluster, $_ := .Values.baselines }}
+            - --baseline={{ $cluster }}=/etc/meshheal-fleet/baselines/{{ $cluster }}.yaml
+            {{- end }}
+          ports: [{name: http, containerPort: 8780}]
+          readinessProbe: {httpGet: {path: /api/v1/health, port: http}, periodSeconds: 10}
+          livenessProbe: {httpGet: {path: /api/v1/health, port: http}, periodSeconds: 30, initialDelaySeconds: 10}
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+          securityContext: {allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: {drop: ["ALL"]}}
+          volumeMounts:
+            - {name: data, mountPath: /data}
+            - {name: tokens, mountPath: /etc/meshheal-fleet, readOnly: true}
+            {{- if .Values.baselines }}
+            - {name: baselines, mountPath: /etc/meshheal-fleet/baselines, readOnly: true}
+            {{- end }}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: {{ $name }}-data}
+        - name: tokens
+          secret: {secretName: {{ $secret }}, items: [{key: tokens.json, path: tokens.json}]}
+        {{- if .Values.baselines }}
+        - name: baselines
+          configMap: {name: {{ $name }}-baselines}
+        {{- end }}
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector: {app.kubernetes.io/name: meshheal-fleet, app.kubernetes.io/instance: {{ .Release.Name }}}
+  ports: [{name: http, port: 8780, targetPort: http}]

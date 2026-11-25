@@ -7,6 +7,7 @@ import Overview from "./pages/Overview";
 import Incidents from "./pages/Incidents";
 import Evaluation from "./pages/Evaluation";
 import HowItWorks from "./pages/HowItWorks";
+import Fleet from "./pages/Fleet";
 
 interface Ctx { state: State | null; error: string | null; reload: () => void }
 const StateCtx = createContext<Ctx>({ state: null, error: null, reload: () => {} });
@@ -19,9 +20,10 @@ const ROUTES = [
   { path: "/incidents", label: "Incidents", el: <Incidents /> },
   { path: "/evaluation", label: "Evaluation", el: <Evaluation /> },
   { path: "/how", label: "How it works", el: <HowItWorks /> },
+  { path: "/fleet", label: "Fleet", el: <Fleet /> },
 ];
 
-const routeOf = () => (window.location.hash.replace(/^#/, "") || "/");
+const routeOf = () => (window.location.hash.replace(/^#/, "").split("?")[0] || "/");
 
 function ThemeToggle() {
   const read = () => document.documentElement.getAttribute("data-theme") ?? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
@@ -78,7 +80,7 @@ export default function App() {
         </div>
       </header>
       <main id="content" tabIndex={-1}>{current.el}</main>
-      {current.path !== "/" && <footer className="footer">MeshHeal AI · 5th-semester mini project · one testbed (Istio Bookinfo), 8 fault episodes. See the Evaluation page for what this does and does not show.</footer>}
+      {current.path !== "/" && current.path !== "/fleet" && <footer className="footer">MeshHeal AI · 5th-semester mini project · one testbed (Istio Bookinfo), 8 fault episodes. See the Evaluation page for what this does and does not show.</footer>}
     </StateCtx.Provider>
   );
 }

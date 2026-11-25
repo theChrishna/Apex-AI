@@ -2,7 +2,7 @@
 
 image:
   repository: meshheal-controlplane
-  tag: "0.6.0"
+  tag: "0.7.0"
   pullPolicy: IfNotPresent
 
 # shadow (default): the controller only reads. The Role it gets has NO write permission at all.
@@ -36,6 +36,24 @@ playbook: |
 # Measured on real data (topo/results/phase4_*): better than the hand-set rule on both Bookinfo and Online Boutique,
 # but on Boutique it still false-alarmed on 10.5% of normal snapshots. Run it in shadow mode first.
 baseline: ""
+# Which scorer uses that baseline: "baseline" (per service) or "edge" (per edge; also sees error faults). Empty = "baseline"
+# when a baseline is given, else the hand-set rule. Results for both: REPORT_PHASE4.md.
+scorer: ""
+
+# Prometheus alert rules for the controller itself (stalled loop, errors, frequent or long reroutes, failed writes).
+# With the Prometheus Operator installed they are created as a PrometheusRule; otherwise as a ConfigMap holding a
+# rules file you add to Prometheus' rule_files (see docs/OPERATIONS.md).
+alerts:
+  enabled: true
+  labels: {}               # extra labels for the PrometheusRule (e.g. the release label your operator selects on)
+
+# OPTIONAL: push this cluster's snapshots and decisions to a fleet API (Phase 6). Needs an ingest token for `cluster`:
+#   python -m dashboard.tokens --file tokens.json add-ingest <cluster>   (prints the token once)
+#   kubectl create secret generic <name> --from-literal=token=<token> -n <release namespace>
+fleet:
+  url: ""                  # e.g. http://meshheal-fleet.meshheal-system.svc:8780 ; empty = no agent
+  cluster: ""              # the name shown in the fleet; default: targetNamespace
+  tokenSecret: ""          # Secret with key "token"
 
 metricsPort: 9102
 
